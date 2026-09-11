@@ -1,56 +1,46 @@
-# Welcome to your Expo app 👋
+# My-Wallet-Frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A personal finance mobile application frontend built with **Expo (React Native)**, **TypeScript**, and **Expo Router**.
 
-## Get started
+## Features & Architecture
+- **Navigation**: Expo Router (file-based navigation)
+- **State Management**: Zustand for global auth and user profile state
+- **Secure Token Storage**: Expo SecureStore with support for rotating refresh tokens
+- **API Client**: Axios instance with automatic Bearer token injection and a concurrency-safe 401 token refresh queue
+- **Design System**: "Botanical Wealth & Quiet Luxury" identity (Nordic Pine `#0E7465`, Champagne Gold `#D4AF37`, Carmine Rose `#E11D48`, Lush Jade `#059669`, and tabular figures)
 
-1. Install dependencies
+## Tech Stack
+- **Framework**: Expo SDK 57 (React Native 0.86, React 19)
+- **Routing**: Expo Router
+- **Language**: TypeScript
+- **State**: Zustand
+- **Storage**: Expo SecureStore
+- **Networking**: Axios
 
-   ```bash
-   npm install
-   ```
+## Getting Started
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+### 1. Install Dependencies
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Ensure `EXPO_PUBLIC_API_URL` points to your backend instance:
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3000
+```
+*(Note: If testing on a physical mobile device via Expo Go, use your computer's local network IP address, e.g. `http://192.168.1.X:3000`)*
 
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 3. Start Development Server
+```bash
+npx expo start
+```
+From the Expo CLI, press:
+- `a` to run on Android emulator or connected device
+- `i` to run on iOS simulator (macOS required)
+- `w` to run in web browser
+- Or scan the QR code with the Expo Go app on your physical phone
