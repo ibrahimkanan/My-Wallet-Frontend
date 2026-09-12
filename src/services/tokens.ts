@@ -1,8 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { User } from '../types/models';
 
 const ACCESS_TOKEN_KEY = 'my_wallet_access_token';
 const REFRESH_TOKEN_KEY = 'my_wallet_refresh_token';
+const USER_KEY = 'my_wallet_user';
 
 // In-memory fallback for environments where SecureStore is unavailable (e.g. standard SSR or certain web configs)
 const memoryStorage = new Map<string, string>();
@@ -81,16 +83,51 @@ export async function setAccessToken(accessToken: string): Promise<void> {
 }
 
 /**
- * Delete both tokens from SecureStore and memory
+ * Persist user profile info
+ */
+export async function setUser(user: User): Promise<void> {
+  try {
+    const raw = JSON.stringify(user);
+    memoryStorage.set(USER_KEY, raw);
+    if (await isSecureStoreAvailable()) {
+      await SecureStore.setItemAsync(USER_KEY, raw);
+    }
+  } catch (error) {
+    console.error('[Tokens] Error persisting user:', error);
+  }
+}
+
+/**
+ * Retrieve persisted user profile info
+ */
+export async function getUser(): Promise<User | null> {
+  try {
+    let raw: string | null = null;
+    if (await isSecureStoreAvailable()) {
+      raw = await SecureStore.getItemAsync(USER_KEY);
+    } else {
+      raw = memoryStorage.get(USER_KEY) ?? null;
+    }
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch (error) {
+    console.warn('[Tokens] Error reading user:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete all tokens and user info from SecureStore and memory
  */
 export async function clearTokens(): Promise<void> {
   try {
     memoryStorage.delete(ACCESS_TOKEN_KEY);
     memoryStorage.delete(REFRESH_TOKEN_KEY);
+    memoryStorage.delete(USER_KEY);
 
     if (await isSecureStoreAvailable()) {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(USER_KEY);
     }
   } catch (error) {
     console.warn('[Tokens] Error clearing tokens:', error);

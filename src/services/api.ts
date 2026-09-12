@@ -1,14 +1,59 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './tokens';
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+/**
+ * Dynamically resolves the API base URL.
+ * When running on a physical device via Expo Go or an emulator,
+ * 'localhost' refers to the phone/emulator itself, not your PC!
+ * This function extracts the host machine's IP from Expo's hostUri.
+ */
+export function getApiBaseUrl(): string {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+
+  // 1. If user provided a specific non-localhost URL in .env, use it
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+
+  // 2. On Web, localhost works directly
+  if (Platform.OS === 'web') {
+    return envUrl || 'http://localhost:3000';
+  }
+
+  // 3. For Expo Go / Development builds on physical devices or emulators,
+  // hostUri contains the IP of the machine running Metro (e.g. "192.168.1.102:8081")
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.extra?.expoClient?.hostUri ||
+    (Constants as any).manifest?.debuggerHost;
+
+  if (hostUri) {
+    const hostIp = hostUri.split(':')[0];
+    if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
+      return `http://${hostIp}:3000`;
+    }
+  }
+
+  // 4. Android Emulator loopback alias to host machine
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:3000';
+  }
+
+  // 5. Default fallback to current local machine LAN IP or localhost
+  return 'http://192.168.1.102:3000';
+}
+
+export const BASE_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
 // Refresh token queue to prevent race conditions during token rotation
@@ -29,9 +74,12 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request Interceptor: Attach Bearer token
+// Request Interceptor: Attach dynamic base URL and Bearer token
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Ensure baseURL is up to date with the latest resolved address
+    config.baseURL = getApiBaseUrl();
+
     // Check in-memory Zustand store first for performance, fallback to SecureStore
     const token = useAuthStore.getState().accessToken || (await getAccessToken());
 
@@ -93,13 +141,15 @@ api.interceptors.response.use(
         throw new Error('No refresh token available');
       }
 
+      const activeBaseUrl = getApiBaseUrl();
+
       // Backend endpoint: POST /auth/refresh  body: { refreshToken }
       // Using a raw axios instance to prevent recursive interceptor calls
       const response = await axios.post<{
         status: string;
         accessToken: string;
         refreshToken: string;
-      }>(`${BASE_URL}/auth/refresh`, {
+      }>(`${activeBaseUrl}/auth/refresh`, {
         refreshToken: currentRefreshToken,
       });
 
