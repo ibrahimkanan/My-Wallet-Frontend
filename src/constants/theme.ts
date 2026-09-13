@@ -2,12 +2,12 @@
  * My Wallet Design System & Visual Identity
  *
  * DESIGN PHILOSOPHY: "Botanical Wealth & Quiet Luxury"
- * - Escapes the fintech cliché of sterile corporate blue and stressful neon crypto colors.
+ * - Arabic-First UI with Cairo typography and full RTL support.
  * - Primary: Deep Juniper Emerald & Nordic Pine — projects grounded growth, stability, and tranquility.
  * - Accent: Warm Champagne Gold — adds a tactile, sovereign, premium edge to highlights and card badges.
  * - Semantic Outflows: Carmine Rose / Terracotta Coral — distinct and legible without causing anxiety.
  * - Semantic Inflows: Crisp Lush Mint/Jade — rewarding and clear.
- * - Tabular Typography: Explicit tabular-nums variant presets to prevent financial numbers from jittering.
+ * - Tabular Typography: Explicit tabular-nums variant presets with Cairo font for Western Arabic numerals.
  */
 
 import { Platform, StyleSheet, TextStyle } from 'react-native';
@@ -152,29 +152,38 @@ export const ThemeColors = {
   },
 } as const;
 
-// Colors export matching template expectations
 export const Colors = ThemeColors;
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 export type ColorTheme = typeof ThemeColors.light;
 export type ColorThemeName = keyof typeof ThemeColors;
 
+/**
+ * Arabic Google Font (Cairo) Family Definitions
+ */
+export const FontFamilies = {
+  regular: 'Cairo_400Regular',
+  medium: 'Cairo_500Medium',
+  semiBold: 'Cairo_600SemiBold',
+  bold: 'Cairo_700Bold',
+};
+
 export const Fonts = Platform.select({
   ios: {
-    sans: 'system-ui',
+    sans: FontFamilies.regular,
     serif: 'ui-serif',
-    rounded: 'ui-rounded',
+    rounded: FontFamilies.medium,
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: FontFamilies.regular,
     serif: 'serif',
-    rounded: 'normal',
+    rounded: FontFamilies.medium,
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
+    sans: `${FontFamilies.regular}, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
     serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
+    rounded: FontFamilies.medium,
     mono: 'var(--font-mono)',
   },
 });
@@ -183,7 +192,6 @@ export const Fonts = Platform.select({
  * Modern Spacing System (8pt base grid with 4pt half-steps)
  */
 export const Spacing = {
-  // Classic template aliases
   half: 2,
   one: 4,
   two: 8,
@@ -192,7 +200,6 @@ export const Spacing = {
   five: 32,
   six: 64,
 
-  // Semantic modern scale
   xxs: 2,
   xs: 4,
   sm: 8,
@@ -223,98 +230,105 @@ export const Radii = {
 
 export const Typography = StyleSheet.create({
   display: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontFamily: FontFamilies.bold,
+    fontSize: 32,
+    lineHeight: 44,
     fontWeight: '700',
-    letterSpacing: -0.8,
   } as TextStyle,
   title1: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontFamily: FontFamilies.bold,
+    fontSize: 24,
+    lineHeight: 36,
     fontWeight: '700',
-    letterSpacing: -0.5,
   } as TextStyle,
   title2: {
-    fontSize: 21,
-    lineHeight: 26,
+    fontFamily: FontFamilies.semiBold,
+    fontSize: 20,
+    lineHeight: 30,
     fontWeight: '600',
-    letterSpacing: -0.3,
   } as TextStyle,
   title3: {
+    fontFamily: FontFamilies.semiBold,
     fontSize: 18,
-    lineHeight: 23,
+    lineHeight: 28,
     fontWeight: '600',
-    letterSpacing: -0.2,
   } as TextStyle,
   headline: {
+    fontFamily: FontFamilies.semiBold,
     fontSize: 16,
-    lineHeight: 21,
+    lineHeight: 24,
     fontWeight: '600',
-    letterSpacing: -0.1,
   } as TextStyle,
   body: {
+    fontFamily: FontFamilies.regular,
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 24,
     fontWeight: '400',
   } as TextStyle,
   bodyMedium: {
+    fontFamily: FontFamilies.medium,
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 24,
     fontWeight: '500',
   } as TextStyle,
   callout: {
+    fontFamily: FontFamilies.regular,
     fontSize: 14,
-    lineHeight: 19,
+    lineHeight: 22,
     fontWeight: '400',
   } as TextStyle,
   subhead: {
+    fontFamily: FontFamilies.medium,
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 20,
     fontWeight: '500',
   } as TextStyle,
   footnote: {
+    fontFamily: FontFamilies.regular,
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 18,
     fontWeight: '400',
   } as TextStyle,
   caption: {
+    fontFamily: FontFamilies.medium,
     fontSize: 11,
-    lineHeight: 14,
+    lineHeight: 16,
     fontWeight: '500',
-    letterSpacing: 0.3,
   } as TextStyle,
   overline: {
+    fontFamily: FontFamilies.bold,
     fontSize: 10,
-    lineHeight: 13,
+    lineHeight: 14,
     fontWeight: '700',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   } as TextStyle,
 
-  // Specialized Financial Typography (Tabular Figures)
+  // Specialized Financial Typography (Tabular Figures using Western Arabic numerals)
   moneyHero: {
-    fontSize: 38,
-    lineHeight: 44,
+    fontFamily: FontFamilies.bold,
+    fontSize: 34,
+    lineHeight: 46,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -1,
   } as TextStyle,
   moneyLarge: {
-    fontSize: 26,
-    lineHeight: 32,
+    fontFamily: FontFamilies.bold,
+    fontSize: 24,
+    lineHeight: 34,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.5,
   } as TextStyle,
   moneyRegular: {
-    fontSize: 17,
-    lineHeight: 22,
+    fontFamily: FontFamilies.semiBold,
+    fontSize: 16,
+    lineHeight: 24,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   } as TextStyle,
   moneySmall: {
+    fontFamily: FontFamilies.semiBold,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   } as TextStyle,
