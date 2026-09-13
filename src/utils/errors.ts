@@ -1,9 +1,13 @@
 import axios from 'axios';
+import { Strings } from '../constants/strings';
 
 /**
  * Extracts a human-readable error message from backend error responses
  */
-export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected error occurred'): string {
+export function getErrorMessage(
+  error: unknown,
+  fallbackMessage: string = Strings.common.errorOccurred
+): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
     if (data) {
@@ -20,6 +24,9 @@ export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected
 
       // 2. Check for "error" key
       if (data.error && typeof data.error === 'string') {
+        if (data.error === 'Email is required') return Strings.auth.emailRequired;
+        if (data.error === 'OTP is invalid or expired') return 'رمز التحقق غير صحيح أو منتهي الصلاحية';
+        if (data.error === 'Wallet not found') return 'المحفظة غير موجودة';
         return data.error;
       }
 
@@ -31,10 +38,10 @@ export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected
 
     // 4. Check for network / timeout issues
     if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-      return 'Request timed out. Please check your connection and try again.';
+      return Strings.common.timeoutError;
     }
     if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-      return 'Unable to reach the server. Please ensure the backend is running.';
+      return Strings.common.networkError;
     }
 
     if (error.message) {
