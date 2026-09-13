@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   useColorScheme,
   ViewStyle,
+  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing } from '../../constants/theme';
 
@@ -39,7 +40,13 @@ export function Input({
   return (
     <View style={[styles.wrapper, containerStyle]}>
       {label ? (
-        <Text style={[Typography.subhead, styles.label, { color: theme.textSecondary }]}>
+        <Text
+          style={[
+            Typography.subhead,
+            styles.label,
+            { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+          ]}
+        >
           {label}
         </Text>
       ) : null}
@@ -74,7 +81,11 @@ export function Input({
           style={[
             Typography.body,
             styles.input,
-            { color: theme.textPrimary },
+            {
+              color: theme.textPrimary,
+              textAlign: I18nManager.isRTL ? 'right' : 'left',
+              writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr',
+            },
             rest.style,
           ]}
         />
@@ -86,18 +97,30 @@ export function Input({
             onPress={() => setIsPasswordVisible((prev) => !prev)}
           >
             <Text style={[Typography.caption, { color: theme.primary, fontWeight: '600' }]}>
-              {isPasswordVisible ? 'Hide' : 'Show'}
+              {isPasswordVisible ? 'إخفاء' : 'إظهار'}
             </Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
       {error ? (
-        <Text style={[Typography.caption, styles.errorText, { color: theme.expense }]}>
+        <Text
+          style={[
+            Typography.caption,
+            styles.errorText,
+            { color: theme.expense, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+          ]}
+        >
           {error}
         </Text>
       ) : helperText ? (
-        <Text style={[Typography.caption, styles.helperText, { color: theme.textTertiary }]}>
+        <Text
+          style={[
+            Typography.caption,
+            styles.helperText,
+            { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+          ]}
+        >
           {helperText}
         </Text>
       ) : null}
@@ -127,20 +150,20 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   prefixContainer: {
-    marginRight: Spacing.sm,
+    marginEnd: Spacing.sm,
   },
   toggleButton: {
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginStart: Spacing.xs,
   },
   errorText: {
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginHorizontal: Spacing.xs,
     fontWeight: '500',
   },
   helperText: {
     marginTop: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginHorizontal: Spacing.xs,
   },
 });

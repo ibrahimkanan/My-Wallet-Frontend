@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
+  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing } from '../../constants/theme';
 
@@ -64,7 +65,13 @@ export function ErrorBanner({
       ]}
     >
       <Text style={styles.icon}>{colors.icon}</Text>
-      <Text style={[Typography.callout, styles.message, { color: colors.text }]}>
+      <Text
+        style={[
+          Typography.callout,
+          styles.message,
+          { color: colors.text, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+        ]}
+      >
         {message}
       </Text>
       {onDismiss ? (
@@ -90,17 +97,17 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 16,
-    marginRight: Spacing.sm,
+    marginEnd: Spacing.sm,
   },
   message: {
     flex: 1,
     fontWeight: '500',
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   dismissButton: {
     paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
-    marginLeft: Spacing.xs,
+    marginStart: Spacing.xs,
   },
 });

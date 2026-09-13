@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   useColorScheme,
+  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing, Shadows } from '../../constants/theme';
 import { WalletType } from '../../types/models';
@@ -69,12 +70,23 @@ export function WalletTypeCard({
             style={[
               Typography.headline,
               styles.title,
-              { color: selected ? theme.textBrand : theme.textPrimary },
+              {
+                color: selected ? theme.textBrand : theme.textPrimary,
+                textAlign: I18nManager.isRTL ? 'right' : 'left',
+              },
             ]}
           >
             {title}
           </Text>
-          <Text style={[Typography.footnote, { color: theme.textSecondary }]}>
+          <Text
+            style={[
+              Typography.footnote,
+              {
+                color: theme.textSecondary,
+                textAlign: I18nManager.isRTL ? 'right' : 'left',
+              },
+            ]}
+          >
             {description}
           </Text>
         </View>
@@ -108,7 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    paddingRight: Spacing.md,
+    paddingEnd: Spacing.md,
   },
   iconCircle: {
     width: 48,
@@ -116,7 +128,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.md,
+    marginEnd: Spacing.md,
   },
   iconText: {
     fontSize: 22,

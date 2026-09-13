@@ -36,7 +36,6 @@ export function Button({
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
   const isInteractive = !disabled && !loading;
 
-  // Variant-specific styles
   const getContainerStyle = (): ViewStyle => {
     switch (variant) {
       case 'secondary':
@@ -120,12 +119,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainer: {
-    marginRight: Spacing.sm,
+    marginEnd: Spacing.sm,
   },
   label: {
     fontWeight: '600',
     fontSize: 16,
-    letterSpacing: -0.2,
   },
   disabled: {
     opacity: 0.5,
