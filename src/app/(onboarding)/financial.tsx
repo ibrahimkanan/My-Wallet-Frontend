@@ -7,12 +7,13 @@ import {
   Platform,
   ScrollView,
   useColorScheme,
-  TouchableOpacity,
+  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Button, Input, WalletTypeCard, ErrorBanner } from '../../components/ui';
+import { ThemeColors, Typography, Spacing, Radii } from '../../constants/theme';
+import { Strings } from '../../constants/strings';
+import { Button, Input, WalletTypeCard, ErrorBanner, BackButton } from '../../components/ui';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { WalletType } from '../../types/models';
@@ -35,11 +36,11 @@ export default function OnboardingFinancialScreen() {
   const getDefaultWalletName = (type: WalletType): string => {
     switch (type) {
       case 'cash':
-        return 'Cash Wallet';
+        return Strings.onboarding.defaultWalletNames.cash;
       case 'bank':
-        return 'Main Bank Account';
+        return Strings.onboarding.defaultWalletNames.bank;
       case 'card':
-        return 'Primary Card';
+        return Strings.onboarding.defaultWalletNames.card;
     }
   };
 
@@ -47,7 +48,7 @@ export default function OnboardingFinancialScreen() {
     const numericIncome = parseFloat(monthlyIncome.replace(/[^0-9.]/g, ''));
 
     if (isNaN(numericIncome) || numericIncome <= 0) {
-      setError('Please enter a valid monthly income / default budget');
+      setError(Strings.onboarding.incomeRequiredError);
       return;
     }
 
@@ -76,7 +77,7 @@ export default function OnboardingFinancialScreen() {
       // 4. Navigate into main application
       router.replace('/(app)');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Failed to complete financial setup'));
+      setError(getErrorMessage(err, 'فشل إتمام الإعداد المالي'));
     } finally {
       setLoading(false);
     }
@@ -93,14 +94,12 @@ export default function OnboardingFinancialScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Back Button */}
-          <TouchableOpacity
-            style={styles.backButton}
+          {/* RTL-Safe Back Button */}
+          <BackButton
             onPress={() => router.back()}
             disabled={loading}
-          >
-            <Text style={[Typography.bodyMedium, { color: theme.primary }]}>← Back</Text>
-          </TouchableOpacity>
+            style={styles.backButton}
+          />
 
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
@@ -108,18 +107,35 @@ export default function OnboardingFinancialScreen() {
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
             </View>
-            <Text style={[Typography.caption, { color: theme.textTertiary, marginTop: Spacing.xs }]}>
-              STEP 2 OF 2: FINANCIAL SETUP
+            <Text
+              style={[
+                Typography.caption,
+                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.financialStepIndicator}
             </Text>
           </View>
 
           {/* Header */}
           <View style={styles.headerSection}>
-            <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              Set up your wallet & budget
+            <Text
+              style={[
+                Typography.title1,
+                styles.title,
+                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.financialTitle}
             </Text>
-            <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              Choose your primary funding source and set your estimated monthly income.
+            <Text
+              style={[
+                Typography.body,
+                styles.subtitle,
+                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.financialSubtitle}
             </Text>
           </View>
 
@@ -129,31 +145,40 @@ export default function OnboardingFinancialScreen() {
 
           {/* Wallet Type Section */}
           <View style={styles.sectionHeader}>
-            <Text style={[Typography.subhead, { color: theme.textSecondary, fontWeight: '600' }]}>
-              SELECT PRIMARY WALLET TYPE *
+            <Text
+              style={[
+                Typography.subhead,
+                {
+                  color: theme.textSecondary,
+                  fontWeight: '600',
+                  textAlign: I18nManager.isRTL ? 'right' : 'left',
+                },
+              ]}
+            >
+              {Strings.onboarding.selectWalletTypeLabel}
             </Text>
           </View>
 
           <WalletTypeCard
             type="bank"
-            title="Bank Account"
-            description="Checking or savings account for salary & transfers"
+            title={Strings.onboarding.walletBankTitle}
+            description={Strings.onboarding.walletBankDesc}
             selected={walletType === 'bank'}
             onSelect={() => setWalletType('bank')}
           />
 
           <WalletTypeCard
             type="cash"
-            title="Cash"
-            description="Physical cash on hand for day-to-day spending"
+            title={Strings.onboarding.walletCashTitle}
+            description={Strings.onboarding.walletCashDesc}
             selected={walletType === 'cash'}
             onSelect={() => setWalletType('cash')}
           />
 
           <WalletTypeCard
             type="card"
-            title="Card"
-            description="Debit or credit card for daily purchases & online pay"
+            title={Strings.onboarding.walletCardTitle}
+            description={Strings.onboarding.walletCardDesc}
             selected={walletType === 'card'}
             onSelect={() => setWalletType('card')}
           />
@@ -161,8 +186,8 @@ export default function OnboardingFinancialScreen() {
           {/* Monthly Income / Budget Input */}
           <View style={styles.budgetInputContainer}>
             <Input
-              label="Estimated Monthly Income / Budget *"
-              placeholder="e.g. 5000"
+              label={Strings.onboarding.monthlyIncomeLabel}
+              placeholder={Strings.onboarding.monthlyIncomePlaceholder}
               value={monthlyIncome}
               onChangeText={(text) => {
                 setMonthlyIncome(text);
@@ -170,17 +195,17 @@ export default function OnboardingFinancialScreen() {
               }}
               keyboardType="decimal-pad"
               prefix={
-                <Text style={[Typography.title3, { color: theme.textSecondary, marginRight: 2 }]}>
-                  $
+                <Text style={[Typography.bodyMedium, { color: theme.textSecondary, marginEnd: 4 }]}>
+                  {Strings.common.currency}
                 </Text>
               }
-              helperText="This sets your default monthly budget to benchmark your savings."
+              helperText={Strings.onboarding.monthlyIncomeHelper}
               editable={!loading}
             />
           </View>
 
           <Button
-            title="Finish Setup & Enter App"
+            title={Strings.onboarding.finishSetupButton}
             onPress={handleFinish}
             loading={loading}
             disabled={!monthlyIncome.trim()}
@@ -205,9 +230,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
   },
   backButton: {
-    alignSelf: 'flex-start',
     marginBottom: Spacing.md,
-    paddingVertical: Spacing.xs,
   },
   progressContainer: {
     marginBottom: Spacing.xl,
@@ -228,7 +251,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    lineHeight: 22,
+    lineHeight: 24,
   },
   sectionHeader: {
     marginBottom: Spacing.sm,

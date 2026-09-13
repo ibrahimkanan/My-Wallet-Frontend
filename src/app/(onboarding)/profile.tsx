@@ -7,10 +7,12 @@ import {
   Platform,
   ScrollView,
   useColorScheme,
+  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
+import { Strings } from '../../constants/strings';
 import { Button, Input, ErrorBanner } from '../../components/ui';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -33,12 +35,12 @@ export default function OnboardingProfileScreen() {
   const handleContinue = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError('Please enter your full name');
+      setError(Strings.onboarding.nameRequired);
       return;
     }
 
     if (password && password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError(Strings.onboarding.passwordLengthError);
       return;
     }
 
@@ -62,7 +64,7 @@ export default function OnboardingProfileScreen() {
       // Navigate to Step 2: Financial Setup
       router.push('/(onboarding)/financial');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Failed to update profile'));
+      setError(getErrorMessage(err, 'فشل تحديث الملف الشخصي'));
     } finally {
       setLoading(false);
     }
@@ -85,18 +87,35 @@ export default function OnboardingProfileScreen() {
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
               <View style={[styles.stepBar, { backgroundColor: theme.border }]} />
             </View>
-            <Text style={[Typography.caption, { color: theme.textTertiary, marginTop: Spacing.xs }]}>
-              STEP 1 OF 2: PROFILE
+            <Text
+              style={[
+                Typography.caption,
+                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.profileStepIndicator}
             </Text>
           </View>
 
           {/* Header */}
           <View style={styles.headerSection}>
-            <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              Tell us about yourself
+            <Text
+              style={[
+                Typography.title1,
+                styles.title,
+                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.profileTitle}
             </Text>
-            <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              Set up your profile to personalize your wallet experience.
+            <Text
+              style={[
+                Typography.body,
+                styles.subtitle,
+                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.onboarding.profileSubtitle}
             </Text>
           </View>
 
@@ -119,19 +138,29 @@ export default function OnboardingProfileScreen() {
             <View style={[styles.emailBadge, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
               <Text style={styles.checkIcon}>✓</Text>
               <View style={styles.emailTextCol}>
-                <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                  Verified Email
+                <Text
+                  style={[
+                    Typography.caption,
+                    { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                  ]}
+                >
+                  {Strings.onboarding.verifiedEmailLabel}
                 </Text>
-                <Text style={[Typography.bodyMedium, { color: theme.textPrimary }]}>
-                  {user?.email || 'Email verified'}
+                <Text
+                  style={[
+                    Typography.bodyMedium,
+                    { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                  ]}
+                >
+                  {user?.email || 'تم توثيق البريد الإلكتروني'}
                 </Text>
               </View>
             </View>
 
             {/* Required Name Input */}
             <Input
-              label="Full Name *"
-              placeholder="e.g. John Doe"
+              label={Strings.onboarding.nameLabel}
+              placeholder={Strings.onboarding.namePlaceholder}
               value={name}
               onChangeText={(text) => {
                 setName(text);
@@ -144,20 +173,20 @@ export default function OnboardingProfileScreen() {
 
             {/* Optional Password Input */}
             <Input
-              label="Password (Optional)"
-              placeholder="Min. 8 characters"
+              label={Strings.onboarding.passwordLabel}
+              placeholder={Strings.onboarding.passwordPlaceholder}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
                 if (error) setError(null);
               }}
               secureTextEntry
-              helperText="Optional: You can set or change this anytime from Settings."
+              helperText={Strings.onboarding.passwordHelper}
               editable={!loading}
             />
 
             <Button
-              title="Continue to Financial Setup"
+              title={Strings.onboarding.continueToFinanceButton}
               onPress={handleContinue}
               loading={loading}
               disabled={!name.trim()}
@@ -202,7 +231,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    lineHeight: 22,
+    lineHeight: 24,
   },
   card: {
     borderRadius: Radii.xxl,

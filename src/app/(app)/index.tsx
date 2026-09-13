@@ -8,15 +8,18 @@ import {
   useColorScheme,
   TouchableOpacity,
   ActivityIndicator,
+  I18nManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors, Typography, Spacing, Radii, Shadows, BrandColors } from '../../constants/theme';
+import { Strings } from '../../constants/strings';
 import { Button } from '../../components/ui';
 import api from '../../services/api';
 import { getRefreshToken } from '../../services/tokens';
 import { useAuthStore } from '../../store/authStore';
 import { Wallet } from '../../types/models';
 import { GetWalletsResponse } from '../../types/api';
+import { formatCurrency } from '../../utils/formatters';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -89,13 +92,28 @@ export default function HomeScreen() {
         {/* Top Greeting Bar */}
         <View style={styles.topBar}>
           <View style={styles.userInfoCol}>
-            <Text style={[Typography.caption, { color: theme.textTertiary, textTransform: 'uppercase' }]}>
-              Financial Dashboard
+            <Text
+              style={[
+                Typography.caption,
+                { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.dashboard.headerSubtitle}
             </Text>
-            <Text style={[Typography.title1, { color: theme.textPrimary }]}>
-              {user?.name ? `Hello, ${user.name}` : 'Welcome Back'}
+            <Text
+              style={[
+                Typography.title1,
+                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {Strings.dashboard.greeting(user?.name)}
             </Text>
-            <Text style={[Typography.footnote, { color: theme.textSecondary }]}>
+            <Text
+              style={[
+                Typography.footnote,
+                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              ]}
+            >
               {user?.email}
             </Text>
           </View>
@@ -103,7 +121,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={[styles.avatarCircle, { backgroundColor: theme.primaryMuted, borderColor: theme.border }]}
           >
-            <Text style={styles.avatarEmoji}>🌿</Text>
+            <Text style={styles.avatarEmoji}>💸</Text>
           </TouchableOpacity>
         </View>
 
@@ -119,34 +137,53 @@ export default function HomeScreen() {
           ]}
         >
           <View style={styles.cardHeaderRow}>
-            <Text style={[Typography.caption, { color: theme.textTertiary, letterSpacing: 0.8 }]}>
-              TOTAL ASSETS BALANCE
+            <Text style={[Typography.caption, { color: theme.textTertiary, letterSpacing: 0.5 }]}>
+              {Strings.dashboard.totalAssets}
             </Text>
             <View style={[styles.statusPill, { backgroundColor: theme.incomeBg }]}>
               <Text style={[Typography.caption, { color: theme.income, fontWeight: '700' }]}>
-                ACTIVE
+                {Strings.dashboard.statusActive}
               </Text>
             </View>
           </View>
 
-          <Text style={[Typography.moneyHero, { color: theme.textPrimary, marginVertical: Spacing.xs }]}>
-            ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <Text
+            style={[
+              Typography.moneyHero,
+              { color: theme.textPrimary, marginVertical: Spacing.xs, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {formatCurrency(totalBalance)}
           </Text>
 
           <View style={[styles.divider, { backgroundColor: theme.borderSubtle }]} />
 
           <View style={styles.budgetStatsRow}>
             <View style={styles.statCol}>
-              <Text style={[Typography.caption, { color: theme.textTertiary }]}>Monthly Budget</Text>
+              <Text
+                style={[
+                  Typography.caption,
+                  { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                ]}
+              >
+                {Strings.dashboard.monthlyBudget}
+              </Text>
               <Text style={[Typography.moneyRegular, { color: BrandColors.gold500 }]}>
-                ${defaultBudget.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {formatCurrency(defaultBudget)}
               </Text>
             </View>
 
             <View style={styles.statCol}>
-              <Text style={[Typography.caption, { color: theme.textTertiary }]}>Primary Wallets</Text>
+              <Text
+                style={[
+                  Typography.caption,
+                  { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                ]}
+              >
+                {Strings.dashboard.walletsCount}
+              </Text>
               <Text style={[Typography.moneyRegular, { color: theme.textPrimary }]}>
-                {wallets.length} {wallets.length === 1 ? 'Account' : 'Accounts'}
+                {Strings.dashboard.accountsUnit(wallets.length)}
               </Text>
             </View>
           </View>
@@ -154,8 +191,13 @@ export default function HomeScreen() {
 
         {/* Wallets List Section */}
         <View style={styles.sectionHeader}>
-          <Text style={[Typography.title3, { color: theme.textPrimary }]}>
-            Your Accounts & Wallets
+          <Text
+            style={[
+              Typography.title3,
+              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {Strings.dashboard.walletsSectionTitle}
           </Text>
         </View>
 
@@ -166,7 +208,7 @@ export default function HomeScreen() {
         ) : wallets.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[Typography.bodyMedium, { color: theme.textSecondary }]}>
-              No wallets found. Create one to get started!
+              {Strings.dashboard.emptyWallets}
             </Text>
           </View>
         ) : (
@@ -186,17 +228,27 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <View>
-                  <Text style={[Typography.headline, { color: theme.textPrimary }]}>
+                  <Text
+                    style={[
+                      Typography.headline,
+                      { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    ]}
+                  >
                     {wallet.name}
                   </Text>
-                  <Text style={[Typography.caption, { color: theme.textSecondary, textTransform: 'capitalize' }]}>
-                    {wallet.type} Account
+                  <Text
+                    style={[
+                      Typography.caption,
+                      { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    ]}
+                  >
+                    {Strings.dashboard.accountTypeSuffix(wallet.type)}
                   </Text>
                 </View>
               </View>
 
               <Text style={[Typography.moneyRegular, { color: theme.income }]}>
-                ${Number(wallet.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                {formatCurrency(Number(wallet.balance))}
               </Text>
             </View>
           ))
@@ -205,7 +257,7 @@ export default function HomeScreen() {
         {/* Sign Out Action */}
         <View style={styles.footerSection}>
           <Button
-            title="Sign Out"
+            title={Strings.dashboard.signOutButton}
             variant="secondary"
             loading={signingOut}
             onPress={handleSignOut}

@@ -7,10 +7,12 @@ import {
   Platform,
   ScrollView,
   useColorScheme,
+  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemeColors, Typography, Spacing, Radii, BrandColors, Shadows } from '../../constants/theme';
+import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
+import { Strings } from '../../constants/strings';
 import { Button, Input, ErrorBanner } from '../../components/ui';
 import api from '../../services/api';
 import { getErrorMessage, getRateLimitSeconds } from '../../utils/errors';
@@ -54,12 +56,12 @@ export default function LoginScreen() {
 
     // Basic format validation
     if (!trimmedEmail) {
-      setError('Please enter your email address');
+      setError(Strings.auth.emailRequired);
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid email address');
+      setError(Strings.auth.emailInvalid);
       return;
     }
 
@@ -83,7 +85,7 @@ export default function LoginScreen() {
       const waitTime = getRateLimitSeconds(err);
       if (waitTime) {
         startCooldown(waitTime);
-        setError(`Rate limit reached. Please wait ${waitTime}s before requesting again.`);
+        setError(Strings.auth.rateLimitWarning(waitTime));
       } else {
         setError(getErrorMessage(err));
       }
@@ -115,10 +117,10 @@ export default function LoginScreen() {
             </View>
 
             <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              Welcome to My Wallet
+              {Strings.auth.loginTitle}
             </Text>
             <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              Sign in with your email to track your wealth, budgets, and cash flow.
+              {Strings.auth.loginSubtitle}
             </Text>
           </View>
 
@@ -142,8 +144,8 @@ export default function LoginScreen() {
             ) : null}
 
             <Input
-              label="Email Address"
-              placeholder="name@example.com"
+              label={Strings.auth.emailLabel}
+              placeholder={Strings.auth.emailPlaceholder}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -160,8 +162,8 @@ export default function LoginScreen() {
             <Button
               title={
                 cooldown > 0
-                  ? `Wait ${cooldown}s`
-                  : 'Send Verification Code'
+                  ? Strings.auth.waitCooldown(cooldown)
+                  : Strings.auth.sendCodeButton
               }
               onPress={handleSendOtp}
               loading={loading}
@@ -170,7 +172,7 @@ export default function LoginScreen() {
             />
 
             <Text style={[Typography.footnote, styles.disclaimer, { color: theme.textTertiary }]}>
-              We will send a 6-digit one-time code to your inbox. No password needed to start.
+              {Strings.auth.otpDisclaimer}
             </Text>
           </View>
         </ScrollView>
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
   },
   card: {
     borderRadius: Radii.xxl,
@@ -228,6 +230,6 @@ const styles = StyleSheet.create({
   disclaimer: {
     textAlign: 'center',
     marginTop: Spacing.lg,
-    lineHeight: 18,
+    lineHeight: 20,
   },
 });

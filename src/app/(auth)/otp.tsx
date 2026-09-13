@@ -9,11 +9,13 @@ import {
   ScrollView,
   useColorScheme,
   ActivityIndicator,
+  I18nManager,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Button, OtpInput, ErrorBanner } from '../../components/ui';
+import { Strings } from '../../constants/strings';
+import { Button, OtpInput, ErrorBanner, BackButton } from '../../components/ui';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { VerifyOtpResponse } from '../../types/api';
@@ -63,7 +65,7 @@ export default function OtpScreen() {
   const handleVerify = async (codeToVerify?: string) => {
     const finalCode = (codeToVerify || code).trim();
     if (finalCode.length < 6) {
-      setError('Please enter the complete 6-digit verification code');
+      setError(Strings.auth.otpIncomplete);
       return;
     }
 
@@ -95,7 +97,7 @@ export default function OtpScreen() {
         }, 1200);
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'Invalid or expired verification code'));
+      setError(getErrorMessage(err, 'رمز التحقق غير صحيح أو منتهي الصلاحية'));
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ export default function OtpScreen() {
       const waitTime = getRateLimitSeconds(err);
       if (waitTime) {
         startCooldown(waitTime);
-        setError(`Please wait ${waitTime}s before requesting another OTP`);
+        setError(Strings.auth.waitCooldown(waitTime));
       } else {
         setError(getErrorMessage(err));
       }
@@ -130,7 +132,7 @@ export default function OtpScreen() {
         <View style={[styles.welcomeCard, Shadows.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={styles.welcomeEmoji}>👋</Text>
           <Text style={[Typography.title1, { color: theme.textPrimary, textAlign: 'center', marginTop: Spacing.md }]}>
-            Welcome Back!
+            {Strings.auth.welcomeBack}
           </Text>
           <Text style={[Typography.bodyMedium, { color: theme.primary, textAlign: 'center', marginTop: Spacing.xs }]}>
             {welcomeBackUser}
@@ -152,26 +154,24 @@ export default function OtpScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Back button / header */}
-          <TouchableOpacity
-            style={styles.backButton}
+          {/* RTL-Safe Back Button */}
+          <BackButton
             onPress={() => router.back()}
             disabled={loading}
-          >
-            <Text style={[Typography.bodyMedium, { color: theme.primary }]}>← Back</Text>
-          </TouchableOpacity>
+            style={styles.backButton}
+          />
 
           <View style={styles.headerSection}>
             <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              Enter Verification Code
+              {Strings.auth.otpTitle}
             </Text>
             <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              We sent a 6-digit code to{' '}
-              <Text style={{ fontWeight: '600', color: theme.textPrimary }}>{email}</Text>
+              {Strings.auth.otpSubtitle}{' '}
+              <Text style={{ fontWeight: '700', color: theme.textPrimary }}>{email}</Text>
             </Text>
             <TouchableOpacity onPress={() => router.back()} style={styles.changeEmailButton}>
-              <Text style={[Typography.footnote, { color: theme.primary, fontWeight: '600' }]}>
-                Change email address
+              <Text style={[Typography.footnote, { color: theme.primary, fontWeight: '700' }]}>
+                {Strings.auth.changeEmail}
               </Text>
             </TouchableOpacity>
           </View>
@@ -205,7 +205,7 @@ export default function OtpScreen() {
             />
 
             <Button
-              title="Verify & Continue"
+              title={Strings.auth.verifyButton}
               onPress={() => handleVerify()}
               loading={loading}
               disabled={code.length < 6}
@@ -216,10 +216,7 @@ export default function OtpScreen() {
             <View style={styles.resendContainer}>
               {resendCooldown > 0 ? (
                 <Text style={[Typography.footnote, { color: theme.textTertiary }]}>
-                  Resend code in{' '}
-                  <Text style={{ fontWeight: '700', color: theme.textSecondary }}>
-                    {resendCooldown}s
-                  </Text>
+                  {Strings.auth.resendIn(resendCooldown)}
                 </Text>
               ) : (
                 <TouchableOpacity
@@ -228,7 +225,7 @@ export default function OtpScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={[Typography.footnote, { color: theme.primary, fontWeight: '700' }]}>
-                    {resending ? 'Sending...' : 'Didn’t get the code? Resend'}
+                    {resending ? Strings.auth.resending : Strings.auth.resendAction}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -259,18 +256,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButton: {
-    alignSelf: 'flex-start',
     marginBottom: Spacing.lg,
-    paddingVertical: Spacing.xs,
   },
   headerSection: {
     marginBottom: Spacing.xl,
   },
   title: {
     marginBottom: Spacing.xs,
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
   },
   subtitle: {
-    lineHeight: 22,
+    lineHeight: 24,
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
   },
   changeEmailButton: {
     marginTop: Spacing.xs,

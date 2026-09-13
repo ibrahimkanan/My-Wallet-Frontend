@@ -1,10 +1,35 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  useColorScheme,
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  I18nManager,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  Cairo_400Regular,
+  Cairo_500Medium,
+  Cairo_600SemiBold,
+  Cairo_700Bold,
+} from '@expo-google-fonts/cairo';
 import { useAuthStore } from '../store/authStore';
 import { ThemeColors, Typography, Spacing, Radii } from '../constants/theme';
+import { Strings } from '../constants/strings';
+
+// 1. Enable RTL at the app's entry point before rendering
+if (!I18nManager.isRTL) {
+  I18nManager.allowRTL(true);
+  I18nManager.forceRTL(true);
+}
+
+// Prevent splash screen from auto-hiding until fonts and auth state are ready
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -14,14 +39,29 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
 
-  // 1. Hydrate tokens and user profile on app launch
+  // 2. Load Cairo Google Fonts
+  const [fontsLoaded, fontError] = useFonts({
+    Cairo_400Regular,
+    Cairo_500Medium,
+    Cairo_600SemiBold,
+    Cairo_700Bold,
+  });
+
+  // 3. Hydrate tokens and user profile on app launch
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
-  // 2. Global Route Guard: react to auth state and segment changes
+  // 4. Hide splash screen when fonts and auth are ready
   useEffect(() => {
-    if (isLoading) return;
+    if ((fontsLoaded || fontError) && !isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError, isLoading]);
+
+  // 5. Global Route Guard: react to auth state and segment changes
+  useEffect(() => {
+    if (isLoading || (!fontsLoaded && !fontError)) return;
 
     const rootSegment = segments[0] as string | undefined;
     const inAuthGroup = rootSegment === '(auth)';
@@ -45,23 +85,22 @@ export default function RootLayout() {
         }
       } else if (inOnboardingGroup && !needsOnboarding) {
         // Onboarded user in onboarding screens
-        // Allow user to proceed or redirect to app
       }
     }
-  }, [isAuthenticated, isLoading, segments, user, router]);
+  }, [isAuthenticated, isLoading, fontsLoaded, fontError, segments, user, router]);
 
-  // Branded Splash / Loading screen while hydrating tokens
-  if (isLoading) {
+  // Branded Splash / Loading screen while hydrating tokens and loading fonts
+  if (isLoading || (!fontsLoaded && !fontError)) {
     return (
       <View style={[styles.splashContainer, { backgroundColor: theme.background }]}>
         <View style={[styles.brandBadge, { backgroundColor: theme.primaryMuted, borderColor: theme.border }]}>
-          <Text style={styles.brandEmoji}>🌿</Text>
+          <Text style={styles.brandEmoji}>💸</Text>
         </View>
         <Text style={[Typography.title1, { color: theme.textPrimary, marginTop: Spacing.md }]}>
-          My Wallet
+          {Strings.common.appName}
         </Text>
         <Text style={[Typography.footnote, { color: theme.textSecondary, marginTop: Spacing.xs }]}>
-          Securing your financial vault...
+          {Strings.common.hydratingVault}
         </Text>
         <ActivityIndicator size="small" color={theme.primary} style={{ marginTop: Spacing.xl }} />
       </View>
