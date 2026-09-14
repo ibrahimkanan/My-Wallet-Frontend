@@ -113,7 +113,7 @@ export default function LoginScreen() {
                 { backgroundColor: theme.primaryMuted, borderColor: theme.border },
               ]}
             >
-              <Text style={styles.brandIconEmoji}>💸</Text>
+              <Text style={styles.brandIconEmoji}>💳</Text>
             </View>
 
             <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
