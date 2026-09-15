@@ -21,9 +21,14 @@ export default function EntryScreen() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // If user has not completed onboarding (profile name not set)
+  // Step 1 check: user profile name
   if (!user?.name) {
     return <Redirect href="/(onboarding)/profile" />;
+  }
+
+  // Step 2 check: user initial financial budget
+  if (!user?.default_monthly_budget) {
+    return <Redirect href="/(onboarding)/financial" />;
   }
 
   return <Redirect href="/(app)" />;

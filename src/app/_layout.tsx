@@ -19,7 +19,7 @@ import {
   Cairo_700Bold,
 } from '@expo-google-fonts/cairo';
 import { useAuthStore } from '../store/authStore';
-import { ThemeColors, Typography, Spacing, Radii } from '../constants/theme';
+import { ThemeColors, Typography, Spacing } from '../constants/theme';
 import { Strings } from '../constants/strings';
 
 // 1. Enable RTL at the app's entry point before rendering
@@ -64,6 +64,7 @@ export default function RootLayout() {
     if (isLoading || (!fontsLoaded && !fontError)) return;
 
     const rootSegment = segments[0] as string | undefined;
+    const subSegment = segments[1] as string | undefined;
     const inAuthGroup = rootSegment === '(auth)';
     const inOnboardingGroup = rootSegment === '(onboarding)';
 
@@ -74,17 +75,23 @@ export default function RootLayout() {
       }
     } else {
       // User IS authenticated
-      const needsOnboarding = !user?.name;
+      const needsProfile = !user?.name;
+      const needsFinancial = !user?.default_monthly_budget;
 
       if (inAuthGroup) {
-        // Authenticated user trying to access auth screens
-        if (needsOnboarding) {
+        // If the user is on the OTP screen, let otp.tsx control the transition
+        // (to allow showing the brief "Welcome back" card for returning users)
+        if (subSegment === 'otp') {
+          return;
+        }
+
+        if (needsProfile) {
           router.replace('/(onboarding)/profile');
+        } else if (needsFinancial) {
+          router.replace('/(onboarding)/financial');
         } else {
           router.replace('/(app)');
         }
-      } else if (inOnboardingGroup && !needsOnboarding) {
-        // Onboarded user in onboarding screens
       }
     }
   }, [isAuthenticated, isLoading, fontsLoaded, fontError, segments, user, router]);
