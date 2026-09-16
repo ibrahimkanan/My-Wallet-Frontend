@@ -78,20 +78,20 @@ export default function RootLayout() {
       const needsProfile = !user?.name;
       const needsFinancial = !user?.default_monthly_budget;
 
-      if (inAuthGroup) {
-        // If the user is on the OTP screen, let otp.tsx control the transition
-        // (to allow showing the brief "Welcome back" card for returning users)
+      if (needsProfile) {
+        if (!inOnboardingGroup || subSegment !== 'profile') {
+          router.replace('/(onboarding)/profile');
+        }
+      } else if (needsFinancial) {
+        if (!inOnboardingGroup || subSegment !== 'financial') {
+          router.replace('/(onboarding)/financial');
+        }
+      } else if (inAuthGroup || inOnboardingGroup) {
+        // If on OTP screen, let otp.tsx handle the timed success transition
         if (subSegment === 'otp') {
           return;
         }
-
-        if (needsProfile) {
-          router.replace('/(onboarding)/profile');
-        } else if (needsFinancial) {
-          router.replace('/(onboarding)/financial');
-        } else {
-          router.replace('/(app)');
-        }
+        router.replace('/');
       }
     }
   }, [isAuthenticated, isLoading, fontsLoaded, fontError, segments, user, router]);
@@ -125,10 +125,9 @@ export default function RootLayout() {
           },
         }}
       >
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(app)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(onboarding)" options={{ animation: 'slide_from_right' }} />
-        <Stack.Screen name="(app)" options={{ animation: 'fade' }} />
       </Stack>
     </SafeAreaProvider>
   );

@@ -75,7 +75,7 @@ export default function OnboardingFinancialScreen() {
       });
 
       // 4. Navigate into main application
-      router.replace('/(app)');
+      router.replace('/');
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'فشل إتمام الإعداد المالي'));
     } finally {

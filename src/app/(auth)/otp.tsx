@@ -93,7 +93,7 @@ export default function OtpScreen() {
         setWelcomeBackUser(displayName);
 
         setTimeout(() => {
-          router.replace('/(app)');
+          router.replace('/');
         }, 1200);
       }
     } catch (err: unknown) {
