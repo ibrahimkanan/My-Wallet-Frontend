@@ -14,7 +14,7 @@ import { ThemeColors, Typography, Radii, Spacing, Shadows } from '../../constant
 export interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -54,6 +54,12 @@ export function Button({
         return {
           backgroundColor: 'transparent',
         };
+      case 'danger':
+        return {
+          backgroundColor: `${theme.expense}15`,
+          borderWidth: 1,
+          borderColor: `${theme.expense}35`,
+        };
       case 'primary':
       default:
         return {
@@ -72,6 +78,8 @@ export function Button({
         return theme.primary;
       case 'ghost':
         return theme.primary;
+      case 'danger':
+        return theme.expense;
       case 'primary':
       default:
         return theme.textInverse;
