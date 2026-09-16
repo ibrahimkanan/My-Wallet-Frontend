@@ -7,6 +7,15 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
       }}
-    />
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="transaction/new"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+    </Stack>
   );
 }
