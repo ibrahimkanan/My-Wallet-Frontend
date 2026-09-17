@@ -271,9 +271,14 @@ export default function HomeScreen() {
               >
                 {Strings.home.walletsBreakdownTitle}
               </Text>
-              <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                {Strings.dashboard.accountsUnit(wallets.length)}
-              </Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => router.push('/wallets' as any)}
+              >
+                <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700' }]}>
+                  {Strings.wallets.title} ←
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {wallets.length === 0 ? (

@@ -9,6 +9,8 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="wallets" options={{ headerShown: false }} />
+      <Stack.Screen name="categories" options={{ headerShown: false }} />
       <Stack.Screen
         name="transaction/new"
         options={{
