@@ -6,9 +6,11 @@ import {
   useColorScheme,
   I18nManager,
   ScrollView,
+  TouchableOpacity,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ThemeColors,
@@ -26,6 +28,7 @@ import { getRefreshToken } from '../../../services/tokens';
 import { formatCurrency } from '../../../utils/formatters';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
 
@@ -98,20 +101,78 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
-        {/* Settings & Info placeholder */}
-        <View
-          style={[
-            styles.infoCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-          ]}
-        >
-          <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
-            {Strings.placeholders.profileTitle}
-          </Text>
-          <Text style={[Typography.caption, styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            {Strings.placeholders.profileSubtitle}
+        {/* Management & Customization Section */}
+        <View style={styles.sectionHeader}>
+          <Text
+            style={[
+              Typography.headline,
+              styles.sectionTitle,
+              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {Strings.settings.manageSection}
           </Text>
         </View>
+
+        {/* Manage Wallets Button Row */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push('/wallets' as any)}
+          style={[
+            styles.navCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            Shadows.card,
+          ]}
+        >
+          <View style={styles.navCardLeft}>
+            <View style={[styles.navIconBox, { backgroundColor: theme.primaryMuted }]}>
+              <Ionicons name="wallet-outline" size={22} color={theme.primary} />
+            </View>
+            <View style={styles.navTextCol}>
+              <Text style={[Typography.subhead, styles.navTitle, { color: theme.textPrimary }]}>
+                {Strings.settings.manageWallets}
+              </Text>
+              <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+                {Strings.settings.manageWalletsDesc}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+            size={20}
+            color={theme.textTertiary}
+          />
+        </TouchableOpacity>
+
+        {/* Manage Categories Button Row */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.push('/categories' as any)}
+          style={[
+            styles.navCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            Shadows.card,
+          ]}
+        >
+          <View style={styles.navCardLeft}>
+            <View style={[styles.navIconBox, { backgroundColor: `${BrandColors.jade500}15` }]}>
+              <Ionicons name="pricetags-outline" size={22} color={BrandColors.jade500} />
+            </View>
+            <View style={styles.navTextCol}>
+              <Text style={[Typography.subhead, styles.navTitle, { color: theme.textPrimary }]}>
+                {Strings.settings.manageCategories}
+              </Text>
+              <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+                {Strings.settings.manageCategoriesDesc}
+              </Text>
+            </View>
+          </View>
+          <Ionicons
+            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+            size={20}
+            color={theme.textTertiary}
+          />
+        </TouchableOpacity>
 
         {/* Sign Out Action */}
         <View style={styles.logoutWrapper}>
@@ -170,20 +231,43 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
     marginTop: Spacing.md,
   },
-  infoCard: {
-    borderRadius: Radii.xl,
-    borderWidth: 1,
-    padding: Spacing.lg,
-    marginBottom: Spacing.xl,
+  sectionHeader: {
+    marginBottom: Spacing.sm,
   },
   sectionTitle: {
     fontWeight: '700',
-    marginBottom: Spacing.xs,
   },
-  sectionSubtitle: {
-    lineHeight: 20,
+  navCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  navCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+    paddingEnd: Spacing.sm,
+  },
+  navIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: Radii.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navTextCol: {
+    flex: 1,
+  },
+  navTitle: {
+    fontWeight: '700',
+    marginBottom: 2,
   },
   logoutWrapper: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
   },
 });
