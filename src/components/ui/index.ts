@@ -4,3 +4,4 @@ export * from './OtpInput';
 export * from './WalletTypeCard';
 export * from './ErrorBanner';
 export * from './BackButton';
+export * from './DatePickerModal';
