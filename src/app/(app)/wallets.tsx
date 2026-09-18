@@ -14,7 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ThemeColors,
@@ -69,9 +69,11 @@ export default function WalletsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchWallets();
-  }, [fetchWallets]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchWallets();
+    }, [fetchWallets])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

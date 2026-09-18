@@ -11,7 +11,7 @@ import {
   I18nManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   ThemeColors,
@@ -138,9 +138,11 @@ export default function HomeScreen() {
     }
   }, [user?.default_monthly_budget]);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+    }, [fetchDashboardData])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -355,7 +357,12 @@ export default function HomeScreen() {
                       transaction={tx}
                       categoryName={cat?.name}
                       walletName={wallet?.name}
-                      onPress={() => router.push('/transactions' as any)}
+                      onPress={() =>
+                        router.push({
+                          pathname: '/transaction/new',
+                          params: { id: tx.id, initialData: JSON.stringify(tx) },
+                        } as any)
+                      }
                     />
                   );
                 })}
