@@ -5,3 +5,4 @@ export * from './WalletTypeCard';
 export * from './ErrorBanner';
 export * from './BackButton';
 export * from './DatePickerModal';
+export * from './MonthYearSelector';
