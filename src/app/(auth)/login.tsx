@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Button, Input, ErrorBanner } from '../../components/ui';
+import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 import { getErrorMessage, getRateLimitSeconds } from '../../utils/errors';
 
@@ -22,12 +23,22 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
 
+  const sessionExpired = useAuthStore((state) => state.sessionExpired);
+  const setSessionExpired = useAuthStore((state) => state.setSessionExpired);
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Check if user was redirected due to expired session
+  useEffect(() => {
+    if (sessionExpired) {
+      setError(Strings.auth.sessionExpired);
+    }
+  }, [sessionExpired]);
 
   // Clear countdown timer on unmount
   useEffect(() => {
@@ -139,7 +150,10 @@ export default function LoginScreen() {
               <ErrorBanner
                 message={error}
                 variant={cooldown > 0 ? 'warning' : 'error'}
-                onDismiss={() => setError(null)}
+                onDismiss={() => {
+                  setError(null);
+                  setSessionExpired(false);
+                }}
               />
             ) : null}
 
@@ -149,7 +163,10 @@ export default function LoginScreen() {
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
-                if (error) setError(null);
+                if (error) {
+                  setError(null);
+                  setSessionExpired(false);
+                }
               }}
               autoCapitalize="none"
               autoComplete="email"

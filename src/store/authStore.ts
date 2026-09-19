@@ -15,11 +15,14 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  sessionExpired: boolean;
 
   // Actions
   setAuth: (user: User, accessToken: string, refreshToken: string) => Promise<void>;
+  setTokens: (accessToken: string, refreshToken: string) => Promise<void>;
   setUser: (user: User) => Promise<void>;
   setAccessToken: (accessToken: string) => Promise<void>;
+  setSessionExpired: (expired: boolean) => void;
   clearAuth: () => Promise<void>;
   initializeAuth: () => Promise<void>;
 }
@@ -29,6 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   isAuthenticated: false,
   isLoading: true,
+  sessionExpired: false,
 
   setAuth: async (user: User, accessToken: string, refreshToken: string) => {
     await setTokens(accessToken, refreshToken);
@@ -38,6 +42,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken,
       isAuthenticated: true,
       isLoading: false,
+      sessionExpired: false,
+    });
+  },
+
+  setTokens: async (accessToken: string, refreshToken: string) => {
+    await setTokens(accessToken, refreshToken);
+    set({
+      accessToken,
+      sessionExpired: false,
     });
   },
 
@@ -49,6 +62,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAccessToken: async (accessToken: string) => {
     await persistAccessToken(accessToken);
     set({ accessToken });
+  },
+
+  setSessionExpired: (sessionExpired: boolean) => {
+    set({ sessionExpired });
   },
 
   clearAuth: async () => {

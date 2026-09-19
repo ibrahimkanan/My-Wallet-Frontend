@@ -43,6 +43,7 @@ export const Strings = {
     resendAction: 'لم يصلك الرمز؟ إعادة الإرسال',
     resending: 'جاري الإرسال...',
     welcomeBack: 'أهلاً بك مجدداً!',
+    sessionExpired: 'انتهت صلاحية جلستك، يرجى تسجيل الدخول مجدداً.',
   },
 
   onboarding: {
