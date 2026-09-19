@@ -44,6 +44,14 @@ export default function OnboardingFinancialScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(onboarding)/profile');
+    }
+  };
+
   const handleFinish = async () => {
     const numericIncome = parseFloat(monthlyIncome.replace(/[^0-9.]/g, ''));
 
@@ -96,7 +104,7 @@ export default function OnboardingFinancialScreen() {
         >
           {/* RTL-Safe Back Button */}
           <BackButton
-            onPress={() => router.back()}
+            onPress={handleBack}
             disabled={loading}
             style={styles.backButton}
           />

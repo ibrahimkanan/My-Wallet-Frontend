@@ -98,8 +98,14 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // If there is no response or error is not 401, reject immediately
-    if (!error.response || error.response.status !== 401 || !originalRequest) {
+    // Check for authentication failures: HTTP 401 or HTTP 403 with 'invalid or expired token'
+    const status = error.response?.status;
+    const responseData = error.response?.data as { error?: string } | undefined;
+    const isAuthError =
+      status === 401 ||
+      (status === 403 && responseData?.error === 'invalid or expired token');
+
+    if (!isAuthError || !originalRequest) {
       return Promise.reject(error);
     }
 

@@ -78,13 +78,17 @@ export default function RootLayout() {
       const needsProfile = !user?.name;
       const needsFinancial = !user?.default_monthly_budget;
 
-      if (needsProfile) {
-        if (!inOnboardingGroup || subSegment !== 'profile') {
+      if (needsProfile || needsFinancial) {
+        // If user hasn't completed onboarding and is outside onboarding group, route to proper step
+        if (!inOnboardingGroup) {
+          if (needsProfile) {
+            router.replace('/(onboarding)/profile');
+          } else {
+            router.replace('/(onboarding)/financial');
+          }
+        } else if (needsProfile && subSegment === 'financial') {
+          // If name is not set, user cannot skip step 1 to step 2
           router.replace('/(onboarding)/profile');
-        }
-      } else if (needsFinancial) {
-        if (!inOnboardingGroup || subSegment !== 'financial') {
-          router.replace('/(onboarding)/financial');
         }
       } else if (inAuthGroup || inOnboardingGroup) {
         // If on OTP screen, let otp.tsx handle the timed success transition
