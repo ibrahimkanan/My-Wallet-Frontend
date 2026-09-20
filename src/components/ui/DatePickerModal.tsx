@@ -6,11 +6,12 @@ import {
   Modal,
   TouchableOpacity,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { ARABIC_MONTHS, formatDateToISO } from '../../utils/formatters';
+import { getLocalizedMonths, formatDateToISO } from '../../utils/formatters';
+import { Strings } from '../../constants/strings';
+import { useLanguage } from '../../i18n';
 import { Button } from './Button';
 
 interface DatePickerModalProps {
@@ -20,7 +21,8 @@ interface DatePickerModalProps {
   onClose: () => void;
 }
 
-const WEEKDAYS = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+const WEEKDAYS_AR = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+const WEEKDAYS_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function DatePickerModal({
   visible,
@@ -30,6 +32,7 @@ export function DatePickerModal({
 }: DatePickerModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, language } = useLanguage();
 
   // Parse initial date
   const parsedInitial = useMemo(() => {
@@ -87,7 +90,9 @@ export function DatePickerModal({
     return new Date(viewYear, viewMonth, 1).getDay();
   }, [viewYear, viewMonth]);
 
-  const monthName = ARABIC_MONTHS[viewMonth] || '';
+  const months = getLocalizedMonths(language);
+  const monthName = months[viewMonth] || '';
+  const weekdays = isRTL ? WEEKDAYS_AR : WEEKDAYS_EN;
 
   const handleSelectDay = (day: number) => {
     const d = new Date(viewYear, viewMonth, day);
@@ -117,12 +122,12 @@ export function DatePickerModal({
           {/* Header */}
           <View style={styles.headerRow}>
             <TouchableOpacity
-              onPress={handleNextMonth}
+              onPress={isRTL ? handleNextMonth : handlePrevMonth}
               style={[styles.navButton, { backgroundColor: theme.surfaceSubtle }]}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
-                name={I18nManager.isRTL ? 'chevron-forward' : 'chevron-back'}
+                name="chevron-back"
                 size={18}
                 color={theme.textPrimary}
               />
@@ -133,12 +138,12 @@ export function DatePickerModal({
             </Text>
 
             <TouchableOpacity
-              onPress={handlePrevMonth}
+              onPress={isRTL ? handlePrevMonth : handleNextMonth}
               style={[styles.navButton, { backgroundColor: theme.surfaceSubtle }]}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
-                name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+                name="chevron-forward"
                 size={18}
                 color={theme.textPrimary}
               />
@@ -147,7 +152,7 @@ export function DatePickerModal({
 
           {/* Weekday headers */}
           <View style={styles.weekdaysRow}>
-            {WEEKDAYS.map((wd, index) => (
+            {weekdays.map((wd, index) => (
               <View key={index} style={styles.cell}>
                 <Text style={[Typography.caption, styles.weekdayText, { color: theme.textTertiary }]}>
                   {wd}
@@ -158,16 +163,17 @@ export function DatePickerModal({
 
           {/* Days Grid */}
           <View style={styles.daysGrid}>
-            {/* Blank leading days */}
-            {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-              <View key={`empty-${i}`} style={styles.cell} />
+            {/* Empty slots before the first day */}
+            {Array.from({ length: firstDayOfWeek }).map((_, index) => (
+              <View key={`empty-${index}`} style={styles.cell} />
             ))}
 
-            {/* Days of month */}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
+            {/* Actual day cells */}
+            {Array.from({ length: daysInMonth }).map((_, index) => {
+              const day = index + 1;
               const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
               const isSelected = selectedDate === dateStr;
+              const isToday = formatDateToISO(new Date()) === dateStr;
 
               return (
                 <TouchableOpacity
@@ -177,19 +183,21 @@ export function DatePickerModal({
                   style={[
                     styles.cell,
                     styles.dayCell,
-                    isSelected && {
-                      backgroundColor: theme.primary,
-                      borderRadius: Radii.full,
-                    },
+                    isSelected && { backgroundColor: theme.primary },
+                    !isSelected && isToday && { borderColor: theme.primary, borderWidth: 1 },
                   ]}
                 >
                   <Text
                     style={[
-                      Typography.bodyMedium,
+                      Typography.caption,
                       styles.dayText,
                       {
-                        color: isSelected ? theme.textInverse : theme.textPrimary,
-                        fontWeight: isSelected ? '700' : '500',
+                        color: isSelected
+                          ? theme.textInverse
+                          : isToday
+                          ? theme.primary
+                          : theme.textPrimary,
+                        fontWeight: isSelected || isToday ? '700' : '500',
                       },
                     ]}
                   >
@@ -204,7 +212,7 @@ export function DatePickerModal({
           <View style={styles.actionsRow}>
             <View style={{ flex: 1 }}>
               <Button
-                title="تأكيد الاختيار"
+                title={Strings.common.confirmSelection}
                 onPress={handleConfirm}
                 variant="primary"
               />
@@ -212,7 +220,7 @@ export function DatePickerModal({
             <View style={{ width: Spacing.sm }} />
             <View style={{ flex: 0.6 }}>
               <Button
-                title="إلغاء"
+                title={Strings.common.cancel}
                 onPress={onClose}
                 variant="ghost"
               />
@@ -244,41 +252,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: Spacing.md,
   },
-  monthTitle: {
-    fontWeight: '700',
-  },
   navButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     borderRadius: Radii.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  monthTitle: {
+    fontWeight: '700',
+  },
   weekdaysRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: Spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    paddingBottom: Spacing.xs,
+  },
+  cell: {
+    flex: 1,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 2,
   },
   weekdayText: {
-    fontWeight: '700',
+    fontWeight: '600',
     textAlign: 'center',
   },
   daysGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: Spacing.md,
-  },
-  cell: {
-    width: '14.28%',
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: Spacing.lg,
   },
   dayCell: {
-    marginVertical: 2,
+    borderRadius: Radii.full,
   },
   dayText: {
     textAlign: 'center',
@@ -286,6 +291,5 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Spacing.sm,
   },
 });

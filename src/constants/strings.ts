@@ -1,362 +1,140 @@
+import { getStrings, interpolate } from '../i18n';
+import { useLanguageStore } from '../store/languageStore';
+
 /**
- * Centralized Arabic UI Strings (Standard Arabic with Jordanian-friendly phrasing)
+ * Dynamic localized strings proxy that resolves to the currently selected language
+ * (English by default, Arabic when toggled).
  */
 export const Strings = {
-  common: {
-    appName: 'محفظتي',
-    appSlogan: 'محفظتك المالية الذكية',
-    currency: 'د.أ',
-    back: 'رجوع',
-    continue: 'متابعة',
-    finish: 'إتمام',
-    confirm: 'تأكيد',
-    cancel: 'إلغاء',
-    save: 'حفظ',
-    delete: 'حذف',
-    edit: 'تعديل',
-    loading: 'جاري التحميل...',
-    hydratingVault: 'جاري تأمين خزنتك المالية...',
-    errorOccurred: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
-    networkError: 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم والاتصال بالإنترنت.',
-    timeoutError: 'انتهت مهلة الطلب. يرجى التحقق من اتصالك والمحاولة مجدداً.',
-    retry: 'إعادة المحاولة',
+  get common() {
+    return getStrings().common;
   },
 
-  auth: {
-    loginTitle: 'تسجيل الدخول إلى محفظتي',
-    loginSubtitle: 'أدخل بريدك الإلكتروني لإدارة مصاريفك، ومحافظك، وميزانيتك بكل سهولة.',
-    emailLabel: 'البريد الإلكتروني',
-    emailPlaceholder: 'name@example.com',
-    sendCodeButton: 'إرسال رمز التحقق',
-    waitCooldown: (seconds: number) => `انتظر ${seconds} ثانية`,
-    rateLimitWarning: (seconds: number) =>
-      `وصلت إلى الحد الأقصى للمحاولات. يرجى الانتظار ${seconds} ثانية قبل طلب رمز جديد.`,
-    emailRequired: 'يرجى إدخال البريد الإلكتروني',
-    emailInvalid: 'يرجى إدخال بريد إلكتروني صحيح',
-    otpDisclaimer: 'سنرسل رمز تحقق مكوّن من 6 أرقام إلى بريدك. لا حاجة لكلمة مرور للبدء.',
-
-    otpTitle: 'أدخل رمز التحقق',
-    otpSubtitle: 'أرسلنا رمز تحقق مكوّناً من 6 أرقام إلى',
-    changeEmail: 'تعديل البريد الإلكتروني',
-    verifyButton: 'تأكيد ومتابعة',
-    otpIncomplete: 'يرجى إدخال رمز التحقق كاملاً المكوّن من 6 أرقام',
-    resendIn: (seconds: number) => `إعادة إرسال الرمز خلال ${seconds} ثانية`,
-    resendAction: 'لم يصلك الرمز؟ إعادة الإرسال',
-    resending: 'جاري الإرسال...',
-    welcomeBack: 'أهلاً بك مجدداً!',
-    sessionExpired: 'انتهت صلاحية جلستك، يرجى تسجيل الدخول مجدداً.',
+  get auth() {
+    const s = getStrings().auth;
+    return {
+      ...s,
+      waitCooldown: (seconds: number) => interpolate(s.waitCooldown, { seconds }),
+      rateLimitWarning: (seconds: number) => interpolate(s.rateLimitWarning, { seconds }),
+      resendIn: (seconds: number) => interpolate(s.resendIn, { seconds }),
+    };
   },
 
-  onboarding: {
-    // Step 1: Profile
-    profileStepIndicator: 'الخطوة 1 من 2: الملف الشخصي',
-    profileTitle: 'عرّفنا عن نفسك',
-    profileSubtitle: 'أكمل ملفك الشخصي لتخصيص تجربتك المالية ومتابعة حسابك.',
-    verifiedEmailLabel: 'البريد الإلكتروني الموثق',
-    nameLabel: 'الاسم الكامل *',
-    namePlaceholder: 'مثال: إبراهيم كنعان',
-    nameRequired: 'يرجى إدخال اسمك الكامل',
-    passwordLabel: 'كلمة المرور (اختياري)',
-    passwordPlaceholder: '8 خانات على الأقل',
-    passwordHelper: 'اختياري: يمكنك تعيينها أو تعديلها لاحقاً من الإعدادات.',
-    passwordLengthError: 'يجب أن تكون كلمة المرور 8 خانات على الأقل',
-    continueToFinanceButton: 'المتابعة إلى الإعداد المالي',
-    changeAccount: 'تسجيل الدخول بحساب آخر',
-
-    // Step 2: Financial Setup
-    financialStepIndicator: 'الخطوة 2 من 2: الإعداد المالي',
-    financialTitle: 'إعداد المحفظة والميزانية',
-    financialSubtitle: 'اختر نوع محفظتك الأساسية وحدد دخلك الشهري التقديري.',
-    selectWalletTypeLabel: 'اختر نوع المحفظة الأساسية *',
-    walletBankTitle: 'حساب بنكي',
-    walletBankDesc: 'حساب جاري أو توفير للرواتب والتحويلات الرسمية',
-    walletCashTitle: 'كاش (نقدي)',
-    walletCashDesc: 'أموال نقدية للمصاريف اليومية والمشتريات السريعة',
-    walletCardTitle: 'بطاقة دفع',
-    walletCardDesc: 'بطاقة ائتمانية أو مدينة للمشتريات اليومية والدفع الإلكتروني',
-    defaultWalletNames: {
-      bank: 'الحساب البنكي الأساسي',
-      cash: 'محفظة الكاش',
-      card: 'البطاقة الأساسية',
-    },
-    monthlyIncomeLabel: 'الدخل الشهري المتوقع / الميزانية *',
-    monthlyIncomePlaceholder: 'مثال: 500',
-    monthlyIncomeHelper: 'يحدد هذا ميزانيتك الشهرية التلقائية لتتبع توفيرك ومصاريفك.',
-    incomeRequiredError: 'يرجى إدخال مبلغ صحيح وموجب للدخل الشهري',
-    finishSetupButton: 'إتمام الإعداد وبدء الاستخدام',
+  get onboarding() {
+    return getStrings().onboarding;
   },
 
-  dashboard: {
-    headerSubtitle: 'لوحة التحكم المالية',
-    greeting: (name?: string | null) => (name ? `أهلاً، ${name}` : 'مرحباً بك'),
-    totalAssets: 'إجمالي رصيد الأصول',
-    statusActive: 'نشط',
-    monthlyBudget: 'الميزانية الشهرية',
-    walletsCount: 'المحافظ الأساسية',
-    accountsUnit: (count: number) => (count === 1 ? 'محفظة واحدة' : count === 2 ? 'محفظتان' : `${count} محافظ`),
-    walletsSectionTitle: 'حساباتك ومحافظك',
-    emptyWallets: 'لا توجد محافظ مسجلة حالياً. أضف محفظة للبدء!',
-    accountTypeSuffix: (type: string) => {
-      switch (type) {
-        case 'bank':
-          return 'حساب بنكي';
-        case 'cash':
-          return 'كاش نقدي';
-        case 'card':
-          return 'بطاقة دفع';
-        default:
-          return 'محفظة';
-      }
-    },
-    signOutButton: 'تسجيل الخروج',
+  get dashboard() {
+    const s = getStrings().dashboard;
+    const isAr = useLanguageStore.getState().language === 'ar';
+    return {
+      ...s,
+      greeting: (name?: string | null) =>
+        name ? interpolate(s.greeting, { name }) : s.greetingGuest,
+      accountsUnit: (count: number) => {
+        if (isAr) {
+          if (count === 1) return s.accountOne;
+          if (count === 2) return s.accountTwo;
+          return interpolate(s.accountMultiple, { count });
+        }
+        return count === 1 ? s.accountOne : interpolate(s.accountMultiple, { count });
+      },
+      accountTypeSuffix: (type: string) => {
+        switch (type) {
+          case 'bank':
+            return s.accountTypeBank;
+          case 'cash':
+            return s.accountTypeCash;
+          case 'card':
+            return s.accountTypeCard;
+          default:
+            return s.accountTypeDefault;
+        }
+      },
+    };
   },
 
-  tabs: {
-    home: 'الرئيسية',
-    transactions: 'المعاملات',
-    budgets: 'الميزانيات',
-    charts: 'التقارير',
-    profile: 'حسابي',
+  get tabs() {
+    return getStrings().tabs;
   },
 
-  home: {
-    greetingWelcome: (name?: string | null) => (name ? `أهلاً، ${name}` : 'أهلاً بك مجدداً'),
-    totalBalanceTitle: 'إجمالي الرصيد',
-    walletsBreakdownTitle: 'تفاصيل المحافظ',
-    monthlyBudgetTitle: 'ميزانية هذا الشهر',
-    budgetedLabel: 'المحدد',
-    spentLabel: 'المصروف',
-    remainingLabel: 'المتبقي',
-    overBudgetTitle: 'تجاوزت الميزانية!',
-    overBudgetWarning: (amount: string) => `تجاوزت الميزانية بمقدار ${amount}`,
-    budgetUsagePercent: (percent: number) => `استهلكت ${percent}% من الميزانية`,
-    noBudgetSet: 'لم يتم تحديد ميزانية لهذا الشهر',
-    setBudgetPrompt: 'اضبط ميزانيتك للتحكم بمصاريفك',
-    recentTransactionsTitle: 'أحدث المعاملات',
-    viewAllAction: 'عرض الكل',
-    noTransactionsTitle: 'لا توجد معاملات مسجلة بعد',
-    noTransactionsSubtitle: 'سجّل معاملاتك اليومية وتتبع مصاريفك بكل دقة.',
-    addTransactionButton: 'إضافة معاملة جديدة',
-    quickAddTooltip: 'معاملة جديدة',
-    todayLabel: 'اليوم',
-    yesterdayLabel: 'أمس',
-    typeIncome: 'دخل',
-    typeExpense: 'مصروف',
-    generalCategory: 'مصروفات عامة',
-    walletDefault: 'المحفظة الأساسية',
+  get home() {
+    const s = getStrings().home;
+    return {
+      ...s,
+      greetingWelcome: (name?: string | null) =>
+        name ? interpolate(s.greetingWelcome, { name }) : s.greetingWelcomeGuest,
+      overBudgetWarning: (amount: string) => interpolate(s.overBudgetWarning, { amount }),
+      budgetUsagePercent: (percent: number) => interpolate(s.budgetUsagePercent, { percent }),
+    };
   },
 
-  placeholders: {
-    transactionsTitle: 'سجل المعاملات',
-    transactionsSubtitle: 'تتبع كافة حركات الدخل والمصروف مع فلاتر وبحث مفصل.',
-    budgetsTitle: 'الميزانيات الشهرية',
-    budgetsSubtitle: 'حدد سقوف الصرف لكل فئة وراقب تقدمك المالي أولاً بأول.',
-    chartsTitle: 'التقارير والإحصائيات',
-    chartsSubtitle: 'رسوم بيانية توضح توزيع نفقاتك ونمو مدخراتك شهرياً وسنوياً.',
-    profileTitle: 'الملف الشخصي والإعدادات',
-    profileSubtitle: 'إدارة الحساب، العملات، الأمان، وتفضيلات المحفظة.',
-    newTransactionTitle: 'تسجيل معاملة جديدة',
-    newTransactionSubtitle: 'أدخل المبلغ، المحفظة، الفئة، والتاريخ لحفظ المعاملة.',
-    comingSoon: 'قريباً في التحديث القادم',
-    closeModal: 'إغلاق',
+  get placeholders() {
+    return getStrings().placeholders;
   },
 
-  wallets: {
-    title: 'إدارة المحافظ',
-    subtitle: 'إدارة حساباتك البنكية، الكاش، والبطاقات ومتابعة أرصدتها',
-    addWallet: 'إضافة محفظة',
-    editWallet: 'تعديل المحفظة',
-    deleteWallet: 'حذف المحفظة',
-    walletNameLabel: 'اسم المحفظة *',
-    walletNamePlaceholder: 'مثال: حساب الراتب، كاش الجيب',
-    walletTypeLabel: 'نوع المحفظة *',
-    nameRequired: 'يرجى إدخال اسم المحفظة',
-    emptyWallets: 'لا توجد محافظ مسجلة حالياً. أضف محفظتك الأولى لبدء إدارة أموالك.',
-    addFirstWallet: 'إضافة محفظة جديدة',
-    saveWallet: 'حفظ المحفظة',
-    saveChanges: 'حفظ التعديلات',
-    deleteWalletWarningTitle: 'تحذير هام لا يمكن التراجع عنه',
-    deleteWalletWarningBody: (name: string) =>
-      `سيؤدي حذف محفظة "${name}" إلى حذف جميع المعاملات المالية المرتبطة بها نهائياً من حسابك. هل أنت متأكد من رغبتك في المتابعة؟`,
-    confirmDelete: 'نعم، احذف المحفظة ومعاملاتها',
-    balanceHelper: 'ملاحظة: يتم تحديث الرصيد تلقائياً عند تسجيل المعاملات المالية.',
-    walletCreatedSuccess: 'تم إنشاء المحفظة بنجاح',
-    walletUpdatedSuccess: 'تم تحديث المحفظة بنجاح',
-    walletDeletedSuccess: 'تم حذف المحفظة بنجاح',
-    totalBalanceLabel: 'مجموع الأرصدة في هذه المحافظ',
+  get wallets() {
+    const s = getStrings().wallets;
+    return {
+      ...s,
+      deleteWalletWarningBody: (name: string) =>
+        interpolate(s.deleteWalletWarningBody, { name }),
+    };
   },
 
-  categories: {
-    title: 'إدارة الفئات',
-    subtitle: 'تصنيف نفقاتك ومصادر دخلك لتتبع أدق وميزانية محكمة',
-    addCategory: 'إضافة فئة',
-    editCategory: 'تعديل الفئة',
-    deleteCategory: 'حذف الفئة',
-    categoryNameLabel: 'اسم الفئة *',
-    categoryNamePlaceholder: 'مثال: تسوق، فواتير، راتب',
-    categoryTypeLabel: 'نوع الفئة *',
-    categoryIconLabel: 'أيقونة الفئة (اختياري)',
-    nameRequired: 'يرجى إدخال اسم الفئة',
-    duplicateNameError: 'اسم الفئة مسجل مسبقاً، يرجى اختيار اسم آخر.',
-    filterAll: 'الكل',
-    filterExpense: 'مصروفات',
-    filterIncome: 'دخل',
-    emptyCategories: 'لا توجد فئات مسجلة في هذا القسم.',
-    addFirstCategory: 'إضافة فئة جديدة',
-    saveCategory: 'حفظ الفئة',
-    saveChanges: 'حفظ التعديلات',
-    deleteCategoryNoticeTitle: 'تأكيد حذف الفئة',
-    deleteCategoryNoticeBody: (name: string) =>
-      `هل أنت متأكد من حذف فئة "${name}"؟ لن تُحذف المعاملات السابقة المسجلة تحتها، بل ستبقى محفوظة وتتحول فقط إلى "غير مصنفة".`,
-    confirmDeleteCategory: 'تأكيد الحذف',
-    categoryCreatedSuccess: 'تم إنشاء الفئة بنجاح',
-    categoryUpdatedSuccess: 'تم تحديث الفئة بنجاح',
-    categoryDeletedSuccess: 'تم حذف الفئة بنجاح',
+  get categories() {
+    const s = getStrings().categories;
+    return {
+      ...s,
+      deleteCategoryNoticeBody: (name: string) =>
+        interpolate(s.deleteCategoryNoticeBody, { name }),
+    };
   },
 
-  settings: {
-    manageSection: 'الإدارة والتخصيص',
-    manageWallets: 'إدارة المحافظ والحسابات',
-    manageWalletsDesc: 'إضافة وتعديل وحذف المحافظ وتتبع أرصدتها',
-    manageCategories: 'إدارة فئات الدخل والمصروف',
-    manageCategoriesDesc: 'تخصيص بنود المصاريف ومصادر الدخل وأيقوناتها',
+  get settings() {
+    return getStrings().settings;
   },
 
-  transactionForm: {
-    addTitle: 'تسجيل معاملة جديدة',
-    editTitle: 'تعديل المعاملة',
-    typeExpense: 'مصروف',
-    typeIncome: 'دخل',
-    amountLabel: 'المبلغ *',
-    amountPlaceholder: '0.00',
-    walletLabel: 'المحفظة *',
-    noWalletsWarning: 'لا توجد محافظ مسجلة لديك حالياً. يرجى إضافة محفظة أولاً لتسجيل المعاملات.',
-    goToAddWallet: 'إضافة محفظة الآن',
-    categoryLabel: 'الفئة (اختياري)',
-    uncategorized: 'بدون فئة',
-    dateLabel: 'تاريخ المعاملة *',
-    today: 'اليوم',
-    yesterday: 'أمس',
-    customDate: 'تاريخ مخصص',
-    noteLabel: 'ملاحظات (اختياري)',
-    notePlaceholder: 'أضف تفاصيل أو ملاحظات حول هذه المعاملة...',
-    saveTransaction: 'حفظ المعاملة',
-    saveChanges: 'حفظ التعديلات',
-    saving: 'جاري الحفظ...',
-    deleting: 'جاري الحذف...',
-    errorAmountRequired: 'يرجى إدخال مبلغ صحيح أكبر من الصفر',
-    errorWalletRequired: 'يرجى اختيار المحفظة',
-    errorWalletNotFound: 'المحفظة المحددة غير موجودة أو تم حذفها، يرجى اختيار محفظة أخرى.',
-    errorCategoryNotFound: 'الفئة المحددة غير موجودة أو تم حذفها، يرجى اختيار فئة أخرى.',
-    errorFailedToSave: 'تعذر حفظ المعاملة، يرجى التحقق والمحاولة مجدداً.',
-    errorFailedToLoad: 'تعذر تحميل تفاصيل المعاملة.',
-    successCreated: 'تم تسجيل المعاملة بنجاح',
-    successUpdated: 'تم تعديل المعاملة بنجاح',
+  get transactionForm() {
+    return getStrings().transactionForm;
   },
 
-  transactions: {
-    title: 'سجل المعاملات',
-    subtitle: 'تتبع ومراقبة كافة حركاتك المالية',
-    filterAction: 'تصفية',
-    filterTitle: 'تصفية المعاملات',
-    filterWallet: 'حسب المحفظة',
-    filterCategory: 'حسب الفئة',
-    filterTime: 'الفترة الزمنية',
-    allWallets: 'جميع المحافظ',
-    allCategories: 'جميع الفئات',
-    allTime: 'جميع الفترات',
-    thisMonth: 'هذا الشهر',
-    lastMonth: 'الشهر الماضي',
-    selectMonthYear: 'تحديد شهر وسنة',
-    monthLabel: 'الشهر',
-    yearLabel: 'السنة',
-    resetFilters: 'إعادة ضبط',
-    applyFilters: 'تطبيق الفلاتر',
-    emptyTransactions: 'لا توجد معاملات مسجلة حتى الآن',
-    emptyFiltered: 'لا توجد معاملات تطابق خيارات التصفية المحددة',
-    resetFilterPrompt: 'جرب تغيير خيارات الفلترة لعرض المزيد من المعاملات.',
-    addTransaction: 'معاملة جديدة',
-    uncategorized: 'غير مصنفة',
-    deleteConfirmTitle: 'تأكيد حذف المعاملة',
-    deleteConfirmBody: (amount: string, walletName?: string) =>
-      `هل أنت متأكد من حذف هذه المعاملة بمبلغ ${amount}${walletName ? ` من محفظة "${walletName}"` : ''}؟ سيتم تعديل رصيد المحفظة تلقائياً.`,
-    confirmDelete: 'نعم، احذف المعاملة',
-    cancel: 'إلغاء',
-    deleteSuccess: 'تم حذف المعاملة وتحديث الرصيد بنجاح',
-    deleteError: 'تعذر حذف المعاملة، يرجى المحاولة لاحقاً',
-    totalIncomeLabel: 'إجمالي الدخل',
-    totalExpenseLabel: 'إجمالي المصروف',
-    netLabel: 'الصافي',
-    loadMore: 'تحميل المزيد',
-    showingResults: (count: number) => `${count} معاملة`,
+  get transactions() {
+    const s = getStrings().transactions;
+    return {
+      ...s,
+      deleteConfirmBody: (amount: string, walletName?: string) =>
+        walletName
+          ? interpolate(s.deleteConfirmBody, { amount, walletName })
+          : interpolate(s.deleteConfirmBodyNoWallet, { amount }),
+      showingResults: (count: number) => interpolate(s.showingResults, { count }),
+    };
   },
 
-  budgets: {
-    title: 'الميزانيات الشهرية',
-    subtitle: 'حدد سقوف الصرف وراقب تقدمك المالي',
-    overallBudgetTitle: 'الميزانية العامة للشهر',
-    overallBudgetSubtitle: 'السقف الإجمالي للمصروفات الشهرية',
-    categoryBudgetsTitle: 'ميزانيات الفئات',
-    addCategoryBudget: 'إضافة ميزانية فئة',
-    editBudget: 'تعديل الميزانية',
-    deleteBudget: 'حذف الميزانية',
-    budgetAmountLabel: 'مبلغ الميزانية *',
-    budgetAmountPlaceholder: '0.00',
-    selectCategory: 'اختيار الفئة *',
-    categoryPlaceholder: 'اختر فئة لتحديد ميزانيتها',
-    saveBudget: 'حفظ الميزانية',
-    saveChanges: 'حفظ التعديلات',
-    deleteConfirmTitle: 'تأكيد حذف الميزانية',
-    deleteConfirmBody: (name: string) => `هل أنت متأكد من رغبتك في حذف ميزانية "${name}"؟`,
-    deleteOverallNote: 'ملاحظة: سيتم إعادة إنشاء الميزانية العامة تلقائياً بناءً على الميزانية الافتراضية لحسابك عند التحديث.',
-    confirmDelete: 'نعم، احذف الميزانية',
-    cancel: 'إلغاء',
-    deleteSuccess: 'تم حذف الميزانية بنجاح',
-    budgetCreatedSuccess: 'تمت إضافة الميزانية بنجاح',
-    budgetUpdatedSuccess: 'تم تحديث الميزانية بنجاح',
-    duplicateCategoryError: 'توجد ميزانية مسجلة بالفعل لهذه الفئة في هذه الفترة',
-    noAvailableCategories: 'تم تحديد ميزانيات لجميع فئات المصروفات المتاحة لهذا الشهر',
-    noCategoryBudgets: 'لا توجد ميزانيات محددة للفئات',
-    noCategoryBudgetsSubtitle: 'أضف سقوف صرف مخصصة للفئات الهامة مثل التسوق، الفواتير، أو الطعام لضبط أدق.',
-    statusFine: 'ضمن الميزانية',
-    statusWarning: 'اقتربت من السقف',
-    statusOver: 'تجاوزت الميزانية',
-    spentOf: (spent: string, budgeted: string) => `${spent} من ${budgeted}`,
-    spentPercentage: (p: number) => `استهلكت ${p}%`,
-    overBudgetBy: (amt: string) => `تجاوز بمقدار ${amt}`,
-    remaining: 'المتبقي',
-    budgeted: 'المحدد',
-    spent: 'المصروف',
-    overallBudget: 'الميزانية العامة',
-    editAmountPrompt: 'تعديل السقف المالي للميزانية:',
-    amountRequired: 'يرجى إدخال مبلغ صحيح أكبر من الصفر',
-    categoryRequired: 'يرجى اختيار الفئة',
+  get budgets() {
+    const s = getStrings().budgets;
+    return {
+      ...s,
+      deleteConfirmBody: (name: string) => interpolate(s.deleteConfirmBody, { name }),
+      spentOf: (spent: string, budgeted: string) => interpolate(s.spentOf, { spent, budgeted }),
+      spentPercentage: (percent: number) => interpolate(s.spentPercentage, { percent }),
+      overBudgetBy: (amount: string) => interpolate(s.overBudgetBy, { amount }),
+      budgetsCount: (count: number) => interpolate(s.budgetsCount, { count }),
+    };
   },
 
-  charts: {
-    title: 'التقارير والإحصائيات',
-    subtitle: 'تحليلات ورسوم بيانية لأدائك المالي',
-    viewMonthly: 'شهري',
-    viewYearly: 'سنوي',
-    totalIncome: 'إجمالي الدخل',
-    totalExpense: 'إجمالي المصروف',
-    netSavings: 'صافي التوفير',
-    categoryBreakdown: 'توزيع النفقات حسب الفئات',
-    categoryBreakdownSubtitle: 'نسبة المصروفات لكل فئة من الإجمالي',
-    yearlyTrend: 'مقارنة الدخل والمصروف الشهرية',
-    yearlyTrendSubtitle: 'أداء التدفقات المالية على مدار أشهر السنة',
-    incomeLegend: 'الدخل',
-    expenseLegend: 'المصروف',
-    emptyMonth: 'لا توجد معاملات مسجلة لهذا الشهر',
-    emptyMonthSubtitle: 'سجّل معاملاتك اليومية لتظهر لك الرسوم والتحليلات البيانية هنا.',
-    emptyYear: 'لا توجد معاملات مسجلة لهذه السنة',
-    emptyYearSubtitle: 'لم يتم العثور على أي حركات دخل أو مصروف مسجلة خلال هذه السنة.',
-    monthDetails: (m: string) => `تفاصيل ${m}`,
-    allExpenses: 'إجمالي المصروفات',
-    uncategorized: 'غير مصنفة',
-    percentOfExpenses: (p: number) => `${p}% من المصاريف`,
-    selectYear: 'اختر السنة',
+  get charts() {
+    const s = getStrings().charts;
+    return {
+      ...s,
+      monthDetails: (month: string) => interpolate(s.monthDetails, { month }),
+      percentOfExpenses: (percent: number) => interpolate(s.percentOfExpenses, { percent }),
+    };
   },
-} as const;
+
+  get dates() {
+    return getStrings().dates;
+  },
+};
 
 export default Strings;

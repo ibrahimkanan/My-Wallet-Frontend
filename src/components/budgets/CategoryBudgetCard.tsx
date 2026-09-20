@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Category, BudgetSummaryItem } from '../../types/models';
 import { formatCurrency } from '../../utils/formatters';
 import { ProgressBar } from '../ui/ProgressBar';
+import { useLanguage } from '../../i18n';
 
 interface CategoryBudgetCardProps {
   item: BudgetSummaryItem;
@@ -20,8 +20,9 @@ export function CategoryBudgetCard({
 }: CategoryBudgetCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings, t } = useLanguage();
 
-  const catName = category?.name || Strings.transactions.uncategorized;
+  const catName = category?.name || strings.transactions.uncategorized;
   const budgeted = item.budgeted;
   const spent = item.spent;
   const ratio = budgeted > 0 ? spent / budgeted : 0;
@@ -50,8 +51,8 @@ export function CategoryBudgetCard({
         Shadows.subtle,
       ]}
     >
-      <View style={styles.topRow}>
-        <View style={styles.titleRow}>
+      <View style={[styles.topRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.titleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View style={[styles.iconWrapper, { backgroundColor: `${statusColor}15` }]}>
             <Ionicons
               name={(category?.icon as any) || 'pricetag-outline'}
@@ -60,11 +61,25 @@ export function CategoryBudgetCard({
             />
           </View>
           <View>
-            <Text style={[Typography.bodyMedium, styles.catName, { color: theme.textPrimary }]}>
+            <Text
+              style={[
+                Typography.bodyMedium,
+                styles.catName,
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
               {catName}
             </Text>
-            <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-              {Strings.budgets.spentOf(formatCurrency(spent), formatCurrency(budgeted))}
+            <Text
+              style={[
+                Typography.caption,
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
+              ]}
+            >
+              {t('budgets.spentOf', {
+                spent: formatCurrency(spent),
+                budgeted: formatCurrency(budgeted),
+              })}
             </Text>
           </View>
         </View>

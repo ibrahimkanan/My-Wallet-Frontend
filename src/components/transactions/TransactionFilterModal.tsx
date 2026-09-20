@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Button } from '../ui/Button';
 import { Wallet, Category } from '../../types/models';
-import { ARABIC_MONTHS } from '../../utils/formatters';
+import { useLanguage } from '../../i18n';
+import { getLocalizedMonths } from '../../utils/formatters';
 
 export interface FilterState {
   walletId: string | null;
@@ -45,22 +45,40 @@ export function TransactionFilterModal({
 }: TransactionFilterModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings } = useLanguage();
 
-  const applyCurrentMonthFilter = () => {
-    const now = new Date();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const prevMonthDate = new Date(currentYear, now.getMonth() - 1, 1);
+  const prevYear = prevMonthDate.getFullYear();
+  const prevMonth = prevMonthDate.getMonth() + 1;
+
+  const isAllTime = draftFilters.month === null && draftFilters.year === null;
+  const isThisMonth = draftFilters.month === currentMonth && draftFilters.year === currentYear;
+  const isLastMonth = draftFilters.month === prevMonth && draftFilters.year === prevYear;
+
+  const applyAllTimeFilter = () => {
     setDraftFilters((prev) => ({
       ...prev,
-      month: now.getMonth() + 1,
-      year: now.getFullYear(),
+      month: null,
+      year: null,
+    }));
+  };
+
+  const applyCurrentMonthFilter = () => {
+    setDraftFilters((prev) => ({
+      ...prev,
+      month: currentMonth,
+      year: currentYear,
     }));
   };
 
   const applyLastMonthFilter = () => {
-    const prevMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1);
     setDraftFilters((prev) => ({
       ...prev,
-      month: prevMonthDate.getMonth() + 1,
-      year: prevMonthDate.getFullYear(),
+      month: prevMonth,
+      year: prevYear,
     }));
   };
 
@@ -80,9 +98,17 @@ export function TransactionFilterModal({
           ]}
         >
           {/* Filter Header */}
-          <View style={[styles.filterSheetHeader, { borderBottomColor: theme.border }]}>
+          <View
+            style={[
+              styles.filterSheetHeader,
+              {
+                borderBottomColor: theme.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+              },
+            ]}
+          >
             <Text style={[Typography.title3, { color: theme.textPrimary, fontWeight: '700' }]}>
-              {Strings.transactions.filterTitle}
+              {strings.transactions.filterTitle}
             </Text>
             <TouchableOpacity
               onPress={onClose}
@@ -98,30 +124,36 @@ export function TransactionFilterModal({
           >
             {/* Filter 1: By Wallet */}
             <View style={styles.filterSection}>
-              <Text style={[Typography.subhead, styles.filterSectionTitle, { color: theme.textPrimary }]}>
-                {Strings.transactions.filterWallet}
+              <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {strings.transactions.filterWallet}
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[styles.chipsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              >
+                {/* All Wallets Chip */}
                 <TouchableOpacity
                   onPress={() => setDraftFilters((prev) => ({ ...prev, walletId: null }))}
                   style={[
                     styles.filterChip,
-                    {
-                      backgroundColor: draftFilters.walletId === null ? theme.primaryMuted : theme.surfaceSubtle,
-                      borderColor: draftFilters.walletId === null ? theme.primary : 'transparent',
-                    },
+                    draftFilters.walletId === null && [
+                      styles.filterChipActive,
+                      { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       Typography.caption,
                       {
-                        color: draftFilters.walletId === null ? theme.primary : theme.textPrimary,
+                        color:
+                          draftFilters.walletId === null ? theme.primary : theme.textSecondary,
                         fontWeight: draftFilters.walletId === null ? '700' : '500',
                       },
                     ]}
                   >
-                    {Strings.transactions.allWallets}
+                    {strings.transactions.allWallets}
                   </Text>
                 </TouchableOpacity>
 
@@ -133,17 +165,17 @@ export function TransactionFilterModal({
                       onPress={() => setDraftFilters((prev) => ({ ...prev, walletId: w.id }))}
                       style={[
                         styles.filterChip,
-                        {
-                          backgroundColor: isSelected ? theme.primaryMuted : theme.surfaceSubtle,
-                          borderColor: isSelected ? theme.primary : 'transparent',
-                        },
+                        isSelected && [
+                          styles.filterChipActive,
+                          { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                        ],
                       ]}
                     >
                       <Text
                         style={[
                           Typography.caption,
                           {
-                            color: isSelected ? theme.primary : theme.textPrimary,
+                            color: isSelected ? theme.primary : theme.textSecondary,
                             fontWeight: isSelected ? '700' : '500',
                           },
                         ]}
@@ -158,30 +190,38 @@ export function TransactionFilterModal({
 
             {/* Filter 2: By Category */}
             <View style={styles.filterSection}>
-              <Text style={[Typography.subhead, styles.filterSectionTitle, { color: theme.textPrimary }]}>
-                {Strings.transactions.filterCategory}
+              <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {strings.transactions.filterCategory}
               </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[styles.chipsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
+              >
+                {/* All Categories Chip */}
                 <TouchableOpacity
                   onPress={() => setDraftFilters((prev) => ({ ...prev, categoryId: null }))}
                   style={[
                     styles.filterChip,
-                    {
-                      backgroundColor: draftFilters.categoryId === null ? theme.primaryMuted : theme.surfaceSubtle,
-                      borderColor: draftFilters.categoryId === null ? theme.primary : 'transparent',
-                    },
+                    draftFilters.categoryId === null && [
+                      styles.filterChipActive,
+                      { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       Typography.caption,
                       {
-                        color: draftFilters.categoryId === null ? theme.primary : theme.textPrimary,
+                        color:
+                          draftFilters.categoryId === null
+                            ? theme.primary
+                            : theme.textSecondary,
                         fontWeight: draftFilters.categoryId === null ? '700' : '500',
                       },
                     ]}
                   >
-                    {Strings.transactions.allCategories}
+                    {strings.transactions.allCategories}
                   </Text>
                 </TouchableOpacity>
 
@@ -193,17 +233,17 @@ export function TransactionFilterModal({
                       onPress={() => setDraftFilters((prev) => ({ ...prev, categoryId: c.id }))}
                       style={[
                         styles.filterChip,
-                        {
-                          backgroundColor: isSelected ? theme.primaryMuted : theme.surfaceSubtle,
-                          borderColor: isSelected ? theme.primary : 'transparent',
-                        },
+                        isSelected && [
+                          styles.filterChipActive,
+                          { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                        ],
                       ]}
                     >
                       <Text
                         style={[
                           Typography.caption,
                           {
-                            color: isSelected ? theme.primary : theme.textPrimary,
+                            color: isSelected ? theme.primary : theme.textSecondary,
                             fontWeight: isSelected ? '700' : '500',
                           },
                         ]}
@@ -218,119 +258,78 @@ export function TransactionFilterModal({
 
             {/* Filter 3: By Month & Year */}
             <View style={styles.filterSection}>
-              <Text style={[Typography.subhead, styles.filterSectionTitle, { color: theme.textPrimary }]}>
-                {Strings.transactions.filterTime}
+              <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {strings.transactions.filterTime}
               </Text>
 
-              {/* Quick Period Buttons */}
-              <View style={styles.periodShortcutsRow}>
+              {/* Quick Presets (All Time / This Month / Last Month) */}
+              <View style={[styles.timePresetsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <TouchableOpacity
-                  onPress={() => setDraftFilters((prev) => ({ ...prev, month: null, year: null }))}
+                  onPress={applyAllTimeFilter}
                   style={[
-                    styles.periodShortcutBtn,
-                    {
-                      backgroundColor:
-                        draftFilters.month === null ? theme.primaryMuted : theme.surfaceSubtle,
-                      borderColor: draftFilters.month === null ? theme.primary : 'transparent',
-                    },
+                    styles.presetBtn,
+                    isAllTime && [
+                      styles.presetBtnActive,
+                      { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       Typography.caption,
                       {
-                        color: draftFilters.month === null ? theme.primary : theme.textPrimary,
-                        fontWeight: draftFilters.month === null ? '700' : '500',
+                        color: isAllTime ? theme.primary : theme.textSecondary,
+                        fontWeight: isAllTime ? '700' : '500',
                       },
                     ]}
                   >
-                    {Strings.transactions.allTime}
+                    {strings.transactions.allTime}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={applyCurrentMonthFilter}
                   style={[
-                    styles.periodShortcutBtn,
-                    {
-                      backgroundColor:
-                        draftFilters.month === new Date().getMonth() + 1 &&
-                        draftFilters.year === new Date().getFullYear()
-                          ? theme.primaryMuted
-                          : theme.surfaceSubtle,
-                      borderColor:
-                        draftFilters.month === new Date().getMonth() + 1 &&
-                        draftFilters.year === new Date().getFullYear()
-                          ? theme.primary
-                          : 'transparent',
-                    },
+                    styles.presetBtn,
+                    isThisMonth && [
+                      styles.presetBtnActive,
+                      { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       Typography.caption,
                       {
-                        color:
-                          draftFilters.month === new Date().getMonth() + 1 &&
-                          draftFilters.year === new Date().getFullYear()
-                            ? theme.primary
-                            : theme.textPrimary,
-                        fontWeight:
-                          draftFilters.month === new Date().getMonth() + 1 &&
-                          draftFilters.year === new Date().getFullYear()
-                            ? '700'
-                            : '500',
+                        color: isThisMonth ? theme.primary : theme.textSecondary,
+                        fontWeight: isThisMonth ? '700' : '500',
                       },
                     ]}
                   >
-                    {Strings.transactions.thisMonth}
+                    {strings.transactions.thisMonth}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={applyLastMonthFilter}
                   style={[
-                    styles.periodShortcutBtn,
-                    {
-                      backgroundColor:
-                        draftFilters.month ===
-                          new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getMonth() + 1 &&
-                        draftFilters.year ===
-                          new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getFullYear()
-                          ? theme.primaryMuted
-                          : theme.surfaceSubtle,
-                      borderColor:
-                        draftFilters.month ===
-                          new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getMonth() + 1 &&
-                        draftFilters.year ===
-                          new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getFullYear()
-                          ? theme.primary
-                          : 'transparent',
-                    },
+                    styles.presetBtn,
+                    isLastMonth && [
+                      styles.presetBtnActive,
+                      { backgroundColor: theme.primaryMuted, borderColor: theme.primary },
+                    ],
                   ]}
                 >
                   <Text
                     style={[
                       Typography.caption,
                       {
-                        color:
-                          draftFilters.month ===
-                            new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getMonth() + 1 &&
-                          draftFilters.year ===
-                            new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getFullYear()
-                            ? theme.primary
-                            : theme.textPrimary,
-                        fontWeight:
-                          draftFilters.month ===
-                            new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getMonth() + 1 &&
-                          draftFilters.year ===
-                            new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getFullYear()
-                            ? '700'
-                            : '500',
+                        color: isLastMonth ? theme.primary : theme.textSecondary,
+                        fontWeight: isLastMonth ? '700' : '500',
                       },
                     ]}
                   >
-                    {Strings.transactions.lastMonth}
+                    {strings.transactions.lastMonth}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -339,9 +338,9 @@ export function TransactionFilterModal({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.monthsGrid}
+                contentContainerStyle={[styles.monthsGrid, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
               >
-                {ARABIC_MONTHS.map((mName, idx) => {
+                {getLocalizedMonths(language).map((mName: string, idx: number) => {
                   const mNum = idx + 1;
                   const isSelected =
                     draftFilters.month === mNum &&
@@ -359,9 +358,10 @@ export function TransactionFilterModal({
                       }}
                       style={[
                         styles.monthChip,
-                        {
-                          backgroundColor: isSelected ? theme.primary : theme.surfaceSubtle,
-                        },
+                        isSelected && [
+                          styles.monthChipActive,
+                          { backgroundColor: theme.primary, borderColor: theme.primary },
+                        ],
                       ]}
                     >
                       <Text
@@ -383,10 +383,18 @@ export function TransactionFilterModal({
           </ScrollView>
 
           {/* Sheet Actions */}
-          <View style={[styles.filterSheetFooter, { borderTopColor: theme.border }]}>
+          <View
+            style={[
+              styles.filterSheetFooter,
+              {
+                borderTopColor: theme.border,
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+              },
+            ]}
+          >
             <View style={{ flex: 1 }}>
               <Button
-                title={Strings.transactions.applyFilters}
+                title={strings.transactions.applyFilters}
                 onPress={onApply}
                 variant="primary"
               />
@@ -394,7 +402,7 @@ export function TransactionFilterModal({
             <View style={{ width: Spacing.sm }} />
             <View style={{ flex: 0.6 }}>
               <Button
-                title={Strings.transactions.resetFilters}
+                title={strings.transactions.resetFilters}
                 onPress={onReset}
                 variant="ghost"
               />
@@ -443,6 +451,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: Spacing.sm,
   },
+  sectionTitle: {
+    fontWeight: '700',
+    marginBottom: Spacing.sm,
+  },
   chipsScroll: {
     gap: Spacing.xs,
     paddingVertical: 2,
@@ -454,7 +466,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: Spacing.xs,
   },
+  filterChipActive: {},
   periodShortcutsRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  timePresetsRow: {
     flexDirection: 'row',
     gap: Spacing.xs,
     marginBottom: Spacing.sm,
@@ -467,6 +485,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
   },
+  presetBtn: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  presetBtnActive: {},
   monthsGrid: {
     gap: Spacing.xs,
     paddingVertical: 4,
@@ -477,6 +504,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     marginRight: Spacing.xs,
   },
+  monthChipActive: {},
   filterSheetFooter: {
     flexDirection: 'row',
     padding: Spacing.lg,

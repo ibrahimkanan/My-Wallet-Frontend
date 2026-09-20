@@ -15,19 +15,21 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { Button, OtpInput, ErrorBanner, BackButton } from '../../components/ui';
-import api from '../../services/api';
+import { Button, ErrorBanner, BackButton, OtpInput } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguage } from '../../i18n';
+import api from '../../services/api';
 import { VerifyOtpResponse } from '../../types/api';
 import { getErrorMessage, getRateLimitSeconds } from '../../utils/errors';
 
 export default function OtpScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email: string }>();
+  const params = useLocalSearchParams<{ email?: string }>();
   const email = params.email || '';
 
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const [code, setCode] = useState('');
@@ -97,7 +99,7 @@ export default function OtpScreen() {
         }, 1200);
       }
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'رمز التحقق غير صحيح أو منتهي الصلاحية'));
+      setError(getErrorMessage(err, strings.auth.invalidOtp));
     } finally {
       setLoading(false);
     }
@@ -162,20 +164,20 @@ export default function OtpScreen() {
           />
 
           <View style={styles.headerSection}>
-            <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              {Strings.auth.otpTitle}
+            <Text style={[Typography.title1, styles.title, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+              {strings.auth.otpTitle}
             </Text>
-            <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              {Strings.auth.otpSubtitle}{' '}
+            <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+              {strings.auth.otpSubtitle}{' '}
               <Text style={{ fontWeight: '700', color: theme.textPrimary }}>{email}</Text>
             </Text>
             <TouchableOpacity
               onPress={() => router.back()}
               disabled={loading}
-              style={styles.changeEmailButton}
+              style={[styles.changeEmailButton, { alignSelf: isRTL ? 'flex-end' : 'flex-start' }]}
             >
               <Text style={[Typography.footnote, { color: loading ? theme.textTertiary : theme.primary, fontWeight: '700' }]}>
-                {Strings.auth.changeEmail}
+                {strings.auth.changeEmail}
               </Text>
             </TouchableOpacity>
           </View>
@@ -267,11 +269,9 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: Spacing.xs,
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
   },
   subtitle: {
     lineHeight: 24,
-    textAlign: I18nManager.isRTL ? 'right' : 'left',
   },
   changeEmailButton: {
     marginTop: Spacing.xs,

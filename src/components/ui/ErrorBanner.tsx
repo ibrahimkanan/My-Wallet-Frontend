@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing } from '../../constants/theme';
+import { useLanguage } from '../../i18n';
 
 export interface ErrorBannerProps {
   message: string | null;
@@ -22,6 +22,7 @@ export function ErrorBanner({
 }: ErrorBannerProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL } = useLanguage();
 
   if (!message) return null;
 
@@ -61,6 +62,7 @@ export function ErrorBanner({
         {
           backgroundColor: colors.bg,
           borderColor: colors.border,
+          flexDirection: isRTL ? 'row-reverse' : 'row',
         },
       ]}
     >
@@ -69,7 +71,7 @@ export function ErrorBanner({
         style={[
           Typography.callout,
           styles.message,
-          { color: colors.text, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+          { color: colors.text, textAlign: isRTL ? 'right' : 'left' },
         ]}
       >
         {message}
@@ -87,7 +89,6 @@ export function ErrorBanner({
 
 const styles = StyleSheet.create({
   banner: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,

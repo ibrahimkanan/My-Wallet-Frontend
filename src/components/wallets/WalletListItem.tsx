@@ -5,6 +5,7 @@ import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constant
 import { Strings } from '../../constants/strings';
 import { Wallet } from '../../types/models';
 import { formatCurrency, getWalletIcon } from '../../utils/formatters';
+import { useLanguage } from '../../i18n';
 
 interface WalletListItemProps {
   wallet: Wallet;
@@ -15,6 +16,7 @@ interface WalletListItemProps {
 export function WalletListItem({ wallet, onEdit, onDelete }: WalletListItemProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
   const numericBalance = Number(wallet.balance) || 0;
 
   return (
@@ -25,9 +27,9 @@ export function WalletListItem({ wallet, onEdit, onDelete }: WalletListItemProps
         Shadows.card,
       ]}
     >
-      <View style={styles.header}>
-        <View style={styles.typeCol}>
-          <View style={[styles.iconBox, { backgroundColor: theme.primaryMuted }]}>
+      <View style={[styles.header, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.typeCol, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+          <View style={[styles.iconBox, { backgroundColor: theme.primaryMuted, marginHorizontal: Spacing.xs }]}>
             <Ionicons
               name={getWalletIcon(wallet.type)}
               size={20}
@@ -36,24 +38,24 @@ export function WalletListItem({ wallet, onEdit, onDelete }: WalletListItemProps
           </View>
           <View style={styles.details}>
             <Text
-              style={[Typography.headline, styles.name, { color: theme.textPrimary }]}
+              style={[Typography.headline, styles.name, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}
               numberOfLines={1}
             >
               {wallet.name}
             </Text>
-            <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+            <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
               {Strings.dashboard.accountTypeSuffix(wallet.type)}
             </Text>
           </View>
         </View>
 
         {/* Action buttons (Edit & Delete) */}
-        <View style={styles.actionsRow}>
+        <View style={[styles.actionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onEdit}
             style={[styles.actionBtn, { backgroundColor: theme.surfaceSubtle }]}
-            accessibilityLabel={Strings.common.edit}
+            accessibilityLabel={strings.common.edit}
           >
             <Ionicons name="pencil" size={16} color={theme.textPrimary} />
           </TouchableOpacity>
@@ -62,7 +64,7 @@ export function WalletListItem({ wallet, onEdit, onDelete }: WalletListItemProps
             activeOpacity={0.7}
             onPress={onDelete}
             style={[styles.actionBtn, { backgroundColor: `${theme.expense}15` }]}
-            accessibilityLabel={Strings.common.delete}
+            accessibilityLabel={strings.common.delete}
           >
             <Ionicons name="trash" size={16} color={theme.expense} />
           </TouchableOpacity>
@@ -70,15 +72,15 @@ export function WalletListItem({ wallet, onEdit, onDelete }: WalletListItemProps
       </View>
 
       {/* Balance Row */}
-      <View style={[styles.balanceRow, { borderTopColor: theme.borderSubtle }]}>
-        <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-          {Strings.home.totalBalanceTitle}
+      <View style={[styles.balanceRow, { borderTopColor: theme.borderSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <Text style={[Typography.caption, { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' }]}>
+          {strings.home.totalBalanceTitle}
         </Text>
         <Text
           style={[
             Typography.title3,
             styles.balanceText,
-            { color: numericBalance >= 0 ? theme.textPrimary : theme.expense },
+            { color: numericBalance >= 0 ? theme.textPrimary : theme.expense, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
           {formatCurrency(numericBalance)}

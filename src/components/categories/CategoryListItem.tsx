@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Category } from '../../types/models';
+import { useLanguage } from '../../i18n';
 
 interface CategoryListItemProps {
   category: Category;
@@ -18,6 +18,7 @@ export function CategoryListItem({
 }: CategoryListItemProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const isExpense = category.type === 'expense';
   const badgeColor = isExpense ? theme.expense : theme.income;
@@ -31,22 +32,22 @@ export function CategoryListItem({
         Shadows.card,
       ]}
     >
-      <View style={styles.cardMainRow}>
-        <View style={styles.cardLeftCol}>
+      <View style={[styles.cardMainRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.cardLeftCol, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <View
             style={[
               styles.iconBox,
-              { backgroundColor: `${badgeColor}15` },
+              { backgroundColor: `${badgeColor}15`, marginHorizontal: Spacing.xs },
             ]}
           >
             <Ionicons name={iconName} size={22} color={badgeColor} />
           </View>
-          <View style={styles.textCol}>
+          <View style={[styles.textCol, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
             <Text
               style={[
                 Typography.headline,
                 styles.name,
-                { color: theme.textPrimary },
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               ]}
               numberOfLines={1}
             >
@@ -64,14 +65,14 @@ export function CategoryListItem({
                   { color: badgeColor, fontWeight: '700' },
                 ]}
               >
-                {isExpense ? Strings.home.typeExpense : Strings.home.typeIncome}
+                {isExpense ? strings.home.typeExpense : strings.home.typeIncome}
               </Text>
             </View>
           </View>
         </View>
 
         {/* Action buttons */}
-        <View style={styles.actionsRow}>
+        <View style={[styles.actionsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onEdit}
@@ -79,7 +80,7 @@ export function CategoryListItem({
               styles.actionBtn,
               { backgroundColor: theme.surfaceSubtle },
             ]}
-            accessibilityLabel={Strings.common.edit}
+            accessibilityLabel={strings.common.edit}
           >
             <Ionicons name="pencil" size={16} color={theme.textPrimary} />
           </TouchableOpacity>
@@ -91,7 +92,7 @@ export function CategoryListItem({
               styles.actionBtn,
               { backgroundColor: `${theme.expense}15` },
             ]}
-            accessibilityLabel={Strings.common.delete}
+            accessibilityLabel={strings.common.delete}
           >
             <Ionicons name="trash-outline" size={16} color={theme.expense} />
           </TouchableOpacity>

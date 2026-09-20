@@ -22,6 +22,7 @@ import {
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
 import { useAuthStore } from '../../../store/authStore';
+import { useLanguage } from '../../../i18n';
 import api from '../../../services/api';
 import {
   Wallet,
@@ -51,6 +52,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings, t } = useLanguage();
 
   const user = useAuthStore((state) => state.user);
 
@@ -197,24 +199,26 @@ export default function HomeScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* Header / Greeting */}
-            <View style={styles.headerRow}>
+            <View style={[styles.headerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={styles.greetingCol}>
                 <Text
                   style={[
                     Typography.title2,
                     styles.greetingText,
-                    { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                 >
-                  {Strings.home.greetingWelcome(displayName)} 👋
+                  {displayName
+                    ? t('home.greetingWelcome', { name: displayName })
+                    : strings.home.greetingWelcomeGuest} 👋
                 </Text>
                 <Text
                   style={[
                     Typography.caption,
-                    { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                 >
-                  {Strings.dashboard.headerSubtitle}
+                  {strings.dashboard.headerSubtitle}
                 </Text>
               </View>
 
@@ -244,7 +248,7 @@ export default function HomeScreen() {
                 >
                   <Ionicons name="refresh-outline" size={16} color={theme.primary} />
                   <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700', marginHorizontal: 6 }]}>
-                    {Strings.common.retry}
+                    {strings.common.retry}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -261,19 +265,19 @@ export default function HomeScreen() {
                 Shadows.card,
               ]}
             >
-              <View style={styles.balanceHeroTop}>
-                <View style={styles.balanceTitleRow}>
+              <View style={[styles.balanceHeroTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                <View style={[styles.balanceTitleRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View style={[styles.balanceIconBadge, { backgroundColor: theme.primaryMuted }]}>
                     <Ionicons name="wallet-outline" size={16} color={theme.primary} />
                   </View>
                   <Text style={[Typography.subhead, { color: theme.textSecondary }]}>
-                    {Strings.home.totalBalanceTitle}
+                    {strings.home.totalBalanceTitle}
                   </Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: `${theme.income}18` }]}>
+                <View style={[styles.statusBadge, { backgroundColor: `${theme.income}18`, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View style={[styles.statusDot, { backgroundColor: theme.income }]} />
                   <Text style={[Typography.caption, { color: theme.income, fontWeight: '700' }]}>
-                    {Strings.dashboard.statusActive}
+                    {strings.dashboard.statusActive}
                   </Text>
                 </View>
               </View>
@@ -284,7 +288,7 @@ export default function HomeScreen() {
                   styles.totalBalanceText,
                   {
                     color: totalBalance >= 0 ? theme.textPrimary : theme.expense,
-                    textAlign: I18nManager.isRTL ? 'right' : 'left',
+                    textAlign: isRTL ? 'right' : 'left',
                   },
                 ]}
               >
@@ -293,22 +297,22 @@ export default function HomeScreen() {
             </View>
 
             {/* Wallets Horizontal Breakdown */}
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Text
                 style={[
                   Typography.headline,
                   styles.sectionTitle,
-                  { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                  { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                 ]}
               >
-                {Strings.home.walletsBreakdownTitle}
+                {strings.home.walletsBreakdownTitle}
               </Text>
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => router.push('/wallets' as any)}
               >
                 <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700' }]}>
-                  {Strings.wallets.title} ←
+                  {strings.wallets.title} {isRTL ? '←' : '→'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -316,13 +320,13 @@ export default function HomeScreen() {
             {wallets.length === 0 ? (
               <EmptyState
                 icon="wallet-outline"
-                title={Strings.dashboard.emptyWallets}
+                title={strings.dashboard.emptyWallets}
               />
             ) : (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.walletsScroll}
+                contentContainerStyle={[styles.walletsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
               >
                 {wallets.map((wallet) => (
                   <WalletCard
@@ -345,15 +349,15 @@ export default function HomeScreen() {
             </View>
 
             {/* Recent Transactions Section */}
-            <View style={styles.sectionHeader}>
+            <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <Text
                 style={[
                   Typography.headline,
                   styles.sectionTitle,
-                  { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                  { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                 ]}
               >
-                {Strings.home.recentTransactionsTitle}
+                {strings.home.recentTransactionsTitle}
               </Text>
               {transactions.length > 0 && (
                 <TouchableOpacity
@@ -361,7 +365,7 @@ export default function HomeScreen() {
                   onPress={() => router.push('/transactions' as any)}
                 >
                   <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700' }]}>
-                    {Strings.home.viewAllAction} ←
+                    {strings.home.viewAllAction} {isRTL ? '←' : '→'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -370,9 +374,9 @@ export default function HomeScreen() {
             {transactions.length === 0 ? (
               <EmptyState
                 icon="receipt-outline"
-                title={Strings.home.noTransactionsTitle}
-                subtitle={Strings.home.noTransactionsSubtitle}
-                actionTitle={Strings.home.addTransactionButton}
+                title={strings.home.noTransactionsTitle}
+                subtitle={strings.home.noTransactionsSubtitle}
+                actionTitle={strings.home.addTransactionButton}
                 onAction={() => router.push('/transaction/new' as any)}
               />
             ) : (

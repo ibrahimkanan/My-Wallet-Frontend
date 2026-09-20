@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   useColorScheme,
   ViewStyle,
-  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing } from '../../constants/theme';
+import { useLanguage } from '../../i18n';
 
 export interface InputProps extends TextInputProps {
   label?: string;
@@ -31,6 +31,7 @@ export function Input({
 }: InputProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -44,7 +45,7 @@ export function Input({
           style={[
             Typography.subhead,
             styles.label,
-            { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
           {label}
@@ -83,8 +84,8 @@ export function Input({
             styles.input,
             {
               color: theme.textPrimary,
-              textAlign: I18nManager.isRTL ? 'right' : 'left',
-              writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr',
+              textAlign: isRTL ? 'right' : 'left',
+              writingDirection: isRTL ? 'rtl' : 'ltr',
             },
             rest.style,
           ]}
@@ -97,7 +98,7 @@ export function Input({
             onPress={() => setIsPasswordVisible((prev) => !prev)}
           >
             <Text style={[Typography.caption, { color: theme.primary, fontWeight: '600' }]}>
-              {isPasswordVisible ? 'إخفاء' : 'إظهار'}
+              {isPasswordVisible ? strings.common.hide : strings.common.show}
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -108,7 +109,7 @@ export function Input({
           style={[
             Typography.caption,
             styles.errorText,
-            { color: theme.expense, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            { color: theme.expense, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
           {error}
@@ -118,7 +119,7 @@ export function Input({
           style={[
             Typography.caption,
             styles.helperText,
-            { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
           {helperText}

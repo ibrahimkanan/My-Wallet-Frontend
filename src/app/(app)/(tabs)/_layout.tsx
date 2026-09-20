@@ -1,13 +1,14 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { useColorScheme, Platform, StyleSheet } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemeColors, FontFamilies, Radii } from '../../../constants/theme';
-import { Strings } from '../../../constants/strings';
+import { ThemeColors, FontFamilies } from '../../../constants/theme';
+import { useLanguage } from '../../../i18n';
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { strings } = useLanguage();
 
   return (
     <Tabs
@@ -33,7 +34,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: Strings.tabs.home,
+          title: strings.tabs.home,
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -48,7 +49,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="transactions"
         options={{
-          title: Strings.tabs.transactions,
+          title: strings.tabs.transactions,
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'receipt' : 'receipt-outline'}
@@ -63,7 +64,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="budgets"
         options={{
-          title: Strings.tabs.budgets,
+          title: strings.tabs.budgets,
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'pie-chart' : 'pie-chart-outline'}
@@ -78,7 +79,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="charts"
         options={{
-          title: Strings.tabs.charts,
+          title: strings.tabs.charts,
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'bar-chart' : 'bar-chart-outline'}
@@ -93,7 +94,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: Strings.tabs.profile,
+          title: strings.tabs.profile,
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}

@@ -30,6 +30,7 @@ import {
   TransactionFilterModal,
   FilterState,
 } from '../../../components';
+import { useLanguage } from '../../../i18n';
 import api from '../../../services/api';
 import { getErrorMessage } from '../../../utils/errors';
 import { Transaction, Wallet, Category } from '../../../types/models';
@@ -42,7 +43,7 @@ import {
   formatCurrency,
   formatTransactionGroupDate,
   formatDateToISO,
-  ARABIC_MONTHS,
+  getLocalizedMonths,
 } from '../../../utils/formatters';
 
 const PAGE_SIZE = 20;
@@ -59,6 +60,7 @@ export default function TransactionsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings, t } = useLanguage();
 
   // Master Data
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -250,25 +252,38 @@ export default function TransactionsScreen() {
       });
 
       return {
-        title: formatTransactionGroupDate(dateKey),
+        title: formatTransactionGroupDate(dateKey, language),
         dateKey,
         totalIncome,
         totalExpense,
         data: items,
       };
     });
-  }, [transactions]);
+  }, [transactions, language]);
 
   // Render Section Header (Date)
   const renderSectionHeader = ({ section }: { section: DateGroup }) => {
     return (
-      <View style={[styles.sectionHeader, { backgroundColor: theme.background }]}>
-        <View style={styles.sectionHeaderLeft}>
+      <View
+        style={[
+          styles.sectionHeader,
+          {
+            backgroundColor: theme.background,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.sectionHeaderLeft,
+            { flexDirection: isRTL ? 'row-reverse' : 'row' },
+          ]}
+        >
           <Ionicons
             name="calendar-outline"
             size={14}
             color={theme.textSecondary}
-            style={{ marginRight: 4 }}
+            style={{ marginEnd: 4 }}
           />
           <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
             {section.title}
@@ -276,7 +291,7 @@ export default function TransactionsScreen() {
         </View>
 
         {/* Daily Net Summary Tag */}
-        <View style={styles.dailySummaryRow}>
+        <View style={[styles.dailySummaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           {section.totalIncome > 0 && (
             <Text style={[Typography.caption, { color: theme.income, fontWeight: '700' }]}>
               +{formatCurrency(section.totalIncome, { showSymbol: false })}
@@ -298,19 +313,27 @@ export default function TransactionsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Top Header Bar */}
-      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
+      <View
+        style={[
+          styles.headerBar,
+          {
+            borderBottomColor: theme.border,
+            flexDirection: isRTL ? 'row-reverse' : 'row',
+          },
+        ]}
+      >
         <View>
           <Text
             style={[
               Typography.title1,
               styles.screenTitle,
-              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
             ]}
           >
-            {Strings.transactions.title}
+            {strings.transactions.title}
           </Text>
-          <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-            {Strings.transactions.showingResults(transactions.length)}
+          <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('transactions.showingResults', { count: transactions.length })}
           </Text>
         </View>
 
@@ -406,7 +429,7 @@ export default function TransactionsScreen() {
             {filters.month !== null && filters.year !== null && (
               <View style={[styles.activeChip, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                 <Text style={[Typography.caption, { color: theme.textPrimary }]}>
-                  {ARABIC_MONTHS[filters.month - 1]} {filters.year}
+                  {getLocalizedMonths(language)[filters.month - 1]} {filters.year}
                 </Text>
                 <TouchableOpacity
                   onPress={() => {

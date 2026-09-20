@@ -5,6 +5,7 @@ import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constant
 import { Strings } from '../../constants/strings';
 import { formatCurrency } from '../../utils/formatters';
 import { ProgressBar } from '../ui/ProgressBar';
+import { useLanguage } from '../../i18n';
 
 interface BudgetProgressCardProps {
   budgeted: number;
@@ -21,6 +22,7 @@ export function BudgetProgressCard({
 }: BudgetProgressCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const hasBudget = budgeted > 0;
   const isOverBudget = hasBudget && spent > budgeted;
@@ -105,7 +107,7 @@ export function BudgetProgressCard({
             {Strings.home.noBudgetSet}
           </Text>
           <Text style={[Typography.caption, { color: theme.primary, fontWeight: '600' }]}>
-            {Strings.home.setBudgetPrompt} ←
+            {strings.home.setBudgetPrompt} {isRTL ? '←' : '→'}
           </Text>
         </View>
       ) : (

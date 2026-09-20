@@ -19,16 +19,17 @@ import {
   Cairo_700Bold,
 } from '@expo-google-fonts/cairo';
 import { useAuthStore } from '../store/authStore';
+import { useLanguageStore } from '../store/languageStore';
 import { ThemeColors, Typography, Spacing } from '../constants/theme';
 import { Strings } from '../constants/strings';
 
-// 1. Enable RTL at the app's entry point before rendering
-if (!I18nManager.isRTL) {
-  I18nManager.allowRTL(true);
-  I18nManager.forceRTL(true);
+// 1. Maintain consistent base layout in native Yoga (prevent native double-flipping)
+if (I18nManager.isRTL) {
+  I18nManager.allowRTL(false);
+  I18nManager.forceRTL(false);
 }
 
-// Prevent splash screen from auto-hiding until fonts and auth state are ready
+// Prevent splash screen from auto-hiding until fonts, auth, and language state are ready
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
@@ -36,6 +37,7 @@ export default function RootLayout() {
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
 
   const { isAuthenticated, isLoading, user, initializeAuth } = useAuthStore();
+  const { initializeLanguage, isLoading: isLanguageLoading } = useLanguageStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -47,21 +49,22 @@ export default function RootLayout() {
     Cairo_700Bold,
   });
 
-  // 3. Hydrate tokens and user profile on app launch
+  // 3. Hydrate tokens and language preference on app launch
   useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+    initializeLanguage();
+  }, [initializeAuth, initializeLanguage]);
 
-  // 4. Hide splash screen when fonts and auth are ready
+  // 4. Hide splash screen when fonts, auth, and language are ready
   useEffect(() => {
-    if ((fontsLoaded || fontError) && !isLoading) {
+    if ((fontsLoaded || fontError) && !isLoading && !isLanguageLoading) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [fontsLoaded, fontError, isLoading]);
+  }, [fontsLoaded, fontError, isLoading, isLanguageLoading]);
 
   // 5. Global Route Guard: react to auth state and segment changes
   useEffect(() => {
-    if (isLoading || (!fontsLoaded && !fontError)) return;
+    if (isLoading || isLanguageLoading || (!fontsLoaded && !fontError)) return;
 
     const rootSegment = segments[0] as string | undefined;
     const subSegment = segments[1] as string | undefined;

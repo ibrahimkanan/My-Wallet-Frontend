@@ -20,6 +20,7 @@ import {
   Shadows,
 } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
+import { useLanguage } from '../../i18n';
 import {
   BackButton,
   ErrorBanner,
@@ -38,6 +39,7 @@ export default function CategoriesScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings, t } = useLanguage();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ export default function CategoriesScreen() {
       }
     } catch (err) {
       console.warn('[Categories] Failed to load categories:', err);
-      setFetchError(getErrorMessage(err, Strings.common.errorOccurred));
+      setFetchError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -107,7 +109,7 @@ export default function CategoriesScreen() {
   const handleSaveCategory = async () => {
     const trimmed = formName.trim();
     if (!trimmed) {
-      setNameError(Strings.categories.nameRequired);
+      setNameError(strings.categories.nameRequired);
       return;
     }
 
@@ -117,7 +119,7 @@ export default function CategoriesScreen() {
     });
 
     if (isDuplicate) {
-      setNameError(Strings.categories.duplicateNameError);
+      setNameError(strings.categories.duplicateNameError);
       return;
     }
 
@@ -142,7 +144,7 @@ export default function CategoriesScreen() {
       setIsFormVisible(false);
       fetchCategories();
     } catch (err: unknown) {
-      setNameError(getErrorMessage(err, Strings.common.errorOccurred));
+      setNameError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setSubmitting(false);
     }
@@ -157,7 +159,7 @@ export default function CategoriesScreen() {
       setCategoryToDelete(null);
       fetchCategories();
     } catch (err: unknown) {
-      setDeleteError(getErrorMessage(err, Strings.common.errorOccurred));
+      setDeleteError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setDeleting(false);
     }
@@ -175,26 +177,26 @@ export default function CategoriesScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.headerLeft}>
+      <View style={[styles.topHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.headerLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <BackButton onPress={() => router.back()} />
           <View style={styles.titleWrapper}>
             <Text
               style={[
                 Typography.title2,
                 styles.title,
-                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.categories.title}
+              {strings.categories.title}
             </Text>
             <Text
               style={[
                 Typography.caption,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.categories.subtitle}
+              {strings.categories.subtitle}
             </Text>
           </View>
         </View>
@@ -202,17 +204,17 @@ export default function CategoriesScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleOpenAdd}
-          style={[styles.addHeaderButton, { backgroundColor: theme.primary }]}
+          style={[styles.addHeaderButton, { backgroundColor: theme.primary, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         >
           <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={[Typography.subhead, styles.addHeaderText, { color: '#FFFFFF' }]}>
-            {Strings.categories.addCategory}
+            {strings.categories.addCategory}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Filter Tabs (All / Expenses / Income) */}
-      <View style={[styles.tabsContainer, { backgroundColor: theme.surfaceSubtle }]}>
+      <View style={[styles.tabsContainer, { backgroundColor: theme.surfaceSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setActiveTab('all')}
@@ -231,7 +233,7 @@ export default function CategoriesScreen() {
               },
             ]}
           >
-            {Strings.categories.filterAll} ({categories.length})
+            {strings.categories.filterAll} ({categories.length})
           </Text>
         </TouchableOpacity>
 
@@ -253,7 +255,7 @@ export default function CategoriesScreen() {
               },
             ]}
           >
-            {Strings.categories.filterExpense} ({expenseCount})
+            {strings.categories.filterExpense} ({expenseCount})
           </Text>
         </TouchableOpacity>
 
@@ -275,7 +277,7 @@ export default function CategoriesScreen() {
               },
             ]}
           >
-            {Strings.categories.filterIncome} ({incomeCount})
+            {strings.categories.filterIncome} ({incomeCount})
           </Text>
         </TouchableOpacity>
       </View>
@@ -305,15 +307,15 @@ export default function CategoriesScreen() {
             <EmptyState
               icon="alert-circle-outline"
               title={fetchError}
-              subtitle={Strings.common.networkError}
-              actionTitle={Strings.common.retry}
+              subtitle={strings.common.networkError}
+              actionTitle={strings.common.retry}
               onAction={fetchCategories}
             />
           ) : filteredCategories.length === 0 ? (
             <EmptyState
               icon="grid-outline"
-              title={Strings.categories.emptyCategories}
-              actionTitle={Strings.categories.addFirstCategory}
+              title={strings.categories.emptyCategories}
+              actionTitle={strings.categories.addFirstCategory}
               onAction={handleOpenAdd}
             />
           ) : (
@@ -356,13 +358,13 @@ export default function CategoriesScreen() {
       {/* Delete Confirmation Modal (Transactions become uncategorized note) */}
       <ConfirmModal
         visible={Boolean(categoryToDelete)}
-        title={Strings.categories.deleteCategoryNoticeTitle}
+        title={strings.categories.deleteCategoryNoticeTitle}
         message={
           categoryToDelete
-            ? Strings.categories.deleteCategoryNoticeBody(categoryToDelete.name)
+            ? t('categories.deleteCategoryNoticeBody', { name: categoryToDelete.name })
             : ''
         }
-        confirmLabel={Strings.categories.confirmDeleteCategory}
+        confirmLabel={strings.categories.confirmDeleteCategory}
         loading={deleting}
         error={deleteError}
         onConfirm={handleConfirmDelete}

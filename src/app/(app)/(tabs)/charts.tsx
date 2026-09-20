@@ -36,7 +36,8 @@ import {
   GetYearlyChartResponse,
   GetCategoriesResponse,
 } from '../../../types/api';
-import { formatCurrency, ARABIC_MONTHS } from '../../../utils/formatters';
+import { formatCurrency, getLocalizedMonths } from '../../../utils/formatters';
+import { useLanguage } from '../../../i18n';
 
 type ViewMode = 'monthly' | 'yearly';
 
@@ -56,6 +57,7 @@ const CATEGORY_PALETTE = [
 export default function ChartsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings, t } = useLanguage();
 
   // Mode & Period State
   const [viewMode, setViewMode] = useState<ViewMode>('monthly');
@@ -122,7 +124,7 @@ export default function ChartsScreen() {
         }
       } catch (err) {
         console.warn('[Charts] Error fetching chart data:', err);
-        setError(getErrorMessage(err, Strings.common.errorOccurred));
+        setError(getErrorMessage(err, strings.common.errorOccurred));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -174,19 +176,19 @@ export default function ChartsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Screen Header */}
-      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
+      <View style={[styles.headerBar, { borderBottomColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <Text
           style={[
             Typography.title1,
             styles.screenTitle,
-            { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
           ]}
         >
-          {Strings.charts.title}
+          {strings.charts.title}
         </Text>
 
         {/* View Mode Toggle: Monthly vs Yearly */}
-        <View style={[styles.viewToggleWrapper, { backgroundColor: theme.surfaceSubtle }]}>
+        <View style={[styles.viewToggleWrapper, { backgroundColor: theme.surfaceSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => setViewMode('monthly')}
@@ -208,7 +210,7 @@ export default function ChartsScreen() {
                 },
               ]}
             >
-              {Strings.charts.viewMonthly}
+              {strings.charts.viewMonthly}
             </Text>
           </TouchableOpacity>
 
@@ -233,7 +235,7 @@ export default function ChartsScreen() {
                 },
               ]}
             >
-              {Strings.charts.viewYearly}
+              {strings.charts.viewYearly}
             </Text>
           </TouchableOpacity>
         </View>
@@ -276,7 +278,7 @@ export default function ChartsScreen() {
               >
                 <Ionicons name="refresh-outline" size={16} color={theme.primary} />
                 <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700', marginHorizontal: 6 }]}>
-                  {Strings.common.retry}
+                  {strings.common.retry}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -288,7 +290,7 @@ export default function ChartsScreen() {
           {viewMode === 'monthly' && (
             <>
               {/* 3 Headline Cards (Income, Expense, Net) */}
-              <View style={styles.headlineCardsRow}>
+              <View style={[styles.headlineCardsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {/* Total Income */}
                 <View
                   style={[
@@ -297,14 +299,14 @@ export default function ChartsScreen() {
                     Shadows.card,
                   ]}
                 >
-                  <View style={styles.headlineTop}>
+                  <View style={[styles.headlineTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.headlineDot, { backgroundColor: theme.income }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.totalIncome}
+                      {strings.charts.totalIncome}
                     </Text>
                   </View>
                   <Text
-                    style={[Typography.title3, styles.headlineValue, { color: theme.income }]}
+                    style={[Typography.title3, styles.headlineValue, { color: theme.income, textAlign: isRTL ? 'right' : 'left' }]}
                     numberOfLines={1}
                   >
                     +{formatCurrency(monthlyData?.total_income || 0)}
@@ -319,14 +321,14 @@ export default function ChartsScreen() {
                     Shadows.card,
                   ]}
                 >
-                  <View style={styles.headlineTop}>
+                  <View style={[styles.headlineTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.headlineDot, { backgroundColor: theme.expense }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.totalExpense}
+                      {strings.charts.totalExpense}
                     </Text>
                   </View>
                   <Text
-                    style={[Typography.title3, styles.headlineValue, { color: theme.expense }]}
+                    style={[Typography.title3, styles.headlineValue, { color: theme.expense, textAlign: isRTL ? 'right' : 'left' }]}
                     numberOfLines={1}
                   >
                     -{formatCurrency(monthlyData?.total_expense || 0)}
@@ -345,10 +347,10 @@ export default function ChartsScreen() {
                   Shadows.card,
                 ]}
               >
-                <View style={styles.netCardInner}>
+                <View style={[styles.netCardInner, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View>
-                    <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.netSavings}
+                    <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                      {strings.charts.netSavings}
                     </Text>
                     <Text
                       style={[
@@ -359,6 +361,7 @@ export default function ChartsScreen() {
                             (monthlyData?.net || 0) >= 0
                               ? theme.income
                               : theme.expense,
+                          textAlign: isRTL ? 'right' : 'left',
                         },
                       ]}
                     >
@@ -395,20 +398,20 @@ export default function ChartsScreen() {
               </View>
 
               {/* Category Breakdown Section */}
-              <View style={styles.sectionHeader}>
-                <Text style={[Typography.headline, styles.sectionTitle, { color: theme.textPrimary }]}>
-                  {Strings.charts.categoryBreakdown}
+              <View style={[styles.sectionHeader, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                <Text style={[Typography.headline, styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  {strings.charts.categoryBreakdown}
                 </Text>
-                <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                  {Strings.charts.categoryBreakdownSubtitle}
+                <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  {strings.charts.categoryBreakdownSubtitle}
                 </Text>
               </View>
 
               {isMonthlyEmpty ? (
                 <EmptyState
                   icon="pie-chart-outline"
-                  title={Strings.charts.emptyMonth}
-                  subtitle={Strings.charts.emptyMonthSubtitle}
+                  title={strings.charts.emptyMonth}
+                  subtitle={strings.charts.emptyMonthSubtitle}
                 />
               ) : (
                 <View
@@ -456,12 +459,12 @@ export default function ChartsScreen() {
                       const catName =
                         cat.category_name ||
                         matchedCat?.name ||
-                        Strings.charts.uncategorized;
+                        strings.charts.uncategorized;
 
                       return (
                         <View key={cat.category_id || `cat-${index}`} style={styles.categoryRow}>
-                          <View style={styles.catRowTop}>
-                            <View style={styles.catNameRow}>
+                          <View style={[styles.catRowTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                            <View style={[styles.catNameRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                               <View style={[styles.colorIndicatorDot, { backgroundColor: color }]} />
                               <Ionicons
                                 name={(matchedCat?.icon as any) || 'pricetag-outline'}
@@ -470,14 +473,14 @@ export default function ChartsScreen() {
                                 style={{ marginHorizontal: 4 }}
                               />
                               <Text
-                                style={[Typography.bodyMedium, styles.catNameText, { color: theme.textPrimary }]}
+                                style={[Typography.bodyMedium, styles.catNameText, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}
                                 numberOfLines={1}
                               >
                                 {catName}
                               </Text>
                             </View>
 
-                            <View style={styles.catAmountsCol}>
+                            <View style={[styles.catAmountsCol, { alignItems: isRTL ? 'flex-start' : 'flex-end' }]}>
                               <Text style={[Typography.subhead, styles.catAmountText, { color: theme.textPrimary }]}>
                                 {formatCurrency(cat.total)}
                               </Text>
@@ -509,7 +512,7 @@ export default function ChartsScreen() {
           {viewMode === 'yearly' && (
             <>
               {/* 3 Headline Cards (Annual Totals) */}
-              <View style={styles.headlineCardsRow}>
+              <View style={[styles.headlineCardsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {/* Annual Income */}
                 <View
                   style={[
@@ -518,14 +521,14 @@ export default function ChartsScreen() {
                     Shadows.card,
                   ]}
                 >
-                  <View style={styles.headlineTop}>
+                  <View style={[styles.headlineTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.headlineDot, { backgroundColor: theme.income }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.totalIncome}
+                      {strings.charts.totalIncome}
                     </Text>
                   </View>
                   <Text
-                    style={[Typography.title3, styles.headlineValue, { color: theme.income }]}
+                    style={[Typography.title3, styles.headlineValue, { color: theme.income, textAlign: isRTL ? 'right' : 'left' }]}
                     numberOfLines={1}
                   >
                     +{formatCurrency(yearlyData?.total_income || 0)}
@@ -540,14 +543,14 @@ export default function ChartsScreen() {
                     Shadows.card,
                   ]}
                 >
-                  <View style={styles.headlineTop}>
+                  <View style={[styles.headlineTop, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.headlineDot, { backgroundColor: theme.expense }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.totalExpense}
+                      {strings.charts.totalExpense}
                     </Text>
                   </View>
                   <Text
-                    style={[Typography.title3, styles.headlineValue, { color: theme.expense }]}
+                    style={[Typography.title3, styles.headlineValue, { color: theme.expense, textAlign: isRTL ? 'right' : 'left' }]}
                     numberOfLines={1}
                   >
                     -{formatCurrency(yearlyData?.total_expense || 0)}
@@ -566,10 +569,10 @@ export default function ChartsScreen() {
                   Shadows.card,
                 ]}
               >
-                <View style={styles.netCardInner}>
+                <View style={[styles.netCardInner, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <View>
-                    <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.netSavings} ({selectedYear})
+                    <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                      {strings.charts.netSavings} ({selectedYear})
                     </Text>
                     <Text
                       style={[
@@ -580,6 +583,7 @@ export default function ChartsScreen() {
                             (yearlyData?.net || 0) >= 0
                               ? theme.income
                               : theme.expense,
+                          textAlign: isRTL ? 'right' : 'left',
                         },
                       ]}
                     >
@@ -616,28 +620,28 @@ export default function ChartsScreen() {
               </View>
 
               {/* 12-Month Comparison Bar Chart Section */}
-              <View style={styles.sectionHeader}>
+              <View style={[styles.sectionHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <View>
-                  <Text style={[Typography.headline, styles.sectionTitle, { color: theme.textPrimary }]}>
-                    {Strings.charts.yearlyTrend}
+                  <Text style={[Typography.headline, styles.sectionTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {strings.charts.yearlyTrend}
                   </Text>
-                  <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                    {Strings.charts.yearlyTrendSubtitle}
+                  <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {strings.charts.yearlyTrendSubtitle}
                   </Text>
                 </View>
 
                 {/* Legend */}
-                <View style={styles.chartLegendRow}>
-                  <View style={styles.legendItem}>
+                <View style={[styles.chartLegendRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+                  <View style={[styles.legendItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.legendDot, { backgroundColor: theme.income }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.incomeLegend}
+                      {strings.charts.incomeLegend}
                     </Text>
                   </View>
-                  <View style={styles.legendItem}>
+                  <View style={[styles.legendItem, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={[styles.legendDot, { backgroundColor: theme.expense }]} />
                     <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                      {Strings.charts.expenseLegend}
+                      {strings.charts.expenseLegend}
                     </Text>
                   </View>
                 </View>
@@ -646,8 +650,8 @@ export default function ChartsScreen() {
               {isYearlyEmpty ? (
                 <EmptyState
                   icon="bar-chart-outline"
-                  title={Strings.charts.emptyYear}
-                  subtitle={Strings.charts.emptyYearSubtitle}
+                  title={strings.charts.emptyYear}
+                  subtitle={strings.charts.emptyYearSubtitle}
                 />
               ) : (
                 <View
@@ -665,17 +669,17 @@ export default function ChartsScreen() {
                         { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
                       ]}
                     >
-                      <Text style={[Typography.caption, styles.inspectorTitle, { color: theme.textPrimary }]}>
-                        {Strings.charts.monthDetails(ARABIC_MONTHS[selectedInspectedData.month - 1])}
+                      <Text style={[Typography.caption, styles.inspectorTitle, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {t('charts.monthDetails', { month: getLocalizedMonths(language)[selectedInspectedData.month - 1] })}
                       </Text>
 
-                      <View style={styles.inspectorRow}>
+                      <View style={[styles.inspectorRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                         <Text style={[Typography.caption, { color: theme.income, fontWeight: '700' }]}>
-                          دخل: +{formatCurrency(selectedInspectedData.total_income)}
+                          {strings.charts.incomeLabel} +{formatCurrency(selectedInspectedData.total_income)}
                         </Text>
                         <Text style={[Typography.caption, { color: theme.textTertiary }]}> • </Text>
                         <Text style={[Typography.caption, { color: theme.expense, fontWeight: '700' }]}>
-                          صرف: -{formatCurrency(selectedInspectedData.total_expense)}
+                          {strings.charts.expenseLabel} -{formatCurrency(selectedInspectedData.total_expense)}
                         </Text>
                         <Text style={[Typography.caption, { color: theme.textTertiary }]}> • </Text>
                         <Text
@@ -690,7 +694,7 @@ export default function ChartsScreen() {
                             },
                           ]}
                         >
-                          صافي: {formatCurrency(selectedInspectedData.net)}
+                          {strings.charts.netLabel} {formatCurrency(selectedInspectedData.net)}
                         </Text>
                       </View>
                     </View>
@@ -700,7 +704,7 @@ export default function ChartsScreen() {
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chartBarsScroll}
+                    contentContainerStyle={[styles.chartBarsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                   >
                     {yearlyData?.by_month.map((item) => {
                       const isInspected = inspectedMonth === item.month;
@@ -711,7 +715,7 @@ export default function ChartsScreen() {
                       const incomeBarHeight = Math.max(incomeRatio * CHART_MAX_HEIGHT, 4);
                       const expenseBarHeight = Math.max(expenseRatio * CHART_MAX_HEIGHT, 4);
 
-                      const monthLabel = ARABIC_MONTHS[item.month - 1];
+                      const monthLabel = getLocalizedMonths(language)[item.month - 1];
 
                       return (
                         <TouchableOpacity

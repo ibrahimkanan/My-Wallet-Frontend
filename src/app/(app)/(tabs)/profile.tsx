@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   useColorScheme,
-  I18nManager,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,8 +18,8 @@ import {
   Shadows,
   BrandColors,
 } from '../../../constants/theme';
-import { Strings } from '../../../constants/strings';
 import { useAuthStore } from '../../../store/authStore';
+import { useLanguage } from '../../../i18n';
 import { Button, SettingRow } from '../../../components';
 import api from '../../../services/api';
 import { getRefreshToken } from '../../../services/tokens';
@@ -30,6 +30,7 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
 
+  const { language, isRTL, setLanguage, strings } = useLanguage();
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
 
@@ -61,10 +62,10 @@ export default function ProfileScreen() {
             style={[
               Typography.title1,
               styles.headerTitle,
-              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
             ]}
           >
-            {Strings.tabs.profile}
+            {strings.tabs.profile}
           </Text>
         </View>
 
@@ -80,7 +81,7 @@ export default function ProfileScreen() {
             <Ionicons name="person" size={36} color={theme.primary} />
           </View>
           <Text style={[Typography.title2, styles.userName, { color: theme.textPrimary }]}>
-            {user?.name || 'مستخدم محفظتي'}
+            {user?.name || strings.settings.userDefault}
           </Text>
           <Text style={[Typography.caption, { color: theme.textSecondary }]}>
             {user?.email}
@@ -90,7 +91,7 @@ export default function ProfileScreen() {
             <View style={[styles.budgetRow, { backgroundColor: theme.surfaceSubtle }]}>
               <Ionicons name="calendar-outline" size={16} color={theme.primary} />
               <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                {Strings.dashboard.monthlyBudget}:
+                {strings.dashboard.monthlyBudget}:
               </Text>
               <Text style={[Typography.subhead, { color: theme.primary, fontWeight: '700' }]}>
                 {formatCurrency(Number(user.default_monthly_budget))}
@@ -99,23 +100,118 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
+        {/* Language & Preferences Section */}
+        <View style={styles.sectionHeader}>
+          <Text
+            style={[
+              Typography.headline,
+              styles.sectionTitle,
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {strings.settings.preferencesSection}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.languageCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+            Shadows.card,
+          ]}
+        >
+          <View
+            style={[
+              styles.languageHeader,
+              { flexDirection: isRTL ? 'row-reverse' : 'row' },
+            ]}
+          >
+            <View style={[styles.langIconBox, { backgroundColor: theme.primaryMuted }]}>
+              <Ionicons name="globe-outline" size={20} color={theme.primary} />
+            </View>
+            <View style={[styles.langTextCol, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+              <Text style={[Typography.subhead, styles.langTitle, { color: theme.textPrimary }]}>
+                {strings.settings.languageLabel}
+              </Text>
+              <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+                {strings.settings.languageDesc}
+              </Text>
+            </View>
+          </View>
+
+          {/* Segmented Control */}
+          <View style={[styles.segmentedTrack, { backgroundColor: theme.surfaceSubtle }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setLanguage('en')}
+              style={[
+                styles.segmentTab,
+                language === 'en' && [
+                  styles.segmentTabActive,
+                  { backgroundColor: theme.primary },
+                  Shadows.subtle,
+                ],
+              ]}
+            >
+              <Text
+                style={[
+                  Typography.subhead,
+                  styles.segmentText,
+                  {
+                    color: language === 'en' ? theme.textInverse : theme.textSecondary,
+                    fontWeight: language === 'en' ? '700' : '500',
+                  },
+                ]}
+              >
+                {strings.settings.langEnglish}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setLanguage('ar')}
+              style={[
+                styles.segmentTab,
+                language === 'ar' && [
+                  styles.segmentTabActive,
+                  { backgroundColor: theme.primary },
+                  Shadows.subtle,
+                ],
+              ]}
+            >
+              <Text
+                style={[
+                  Typography.subhead,
+                  styles.segmentText,
+                  {
+                    color: language === 'ar' ? theme.textInverse : theme.textSecondary,
+                    fontWeight: language === 'ar' ? '700' : '500',
+                  },
+                ]}
+              >
+                {strings.settings.langArabic}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Management & Customization Section */}
         <View style={styles.sectionHeader}>
           <Text
             style={[
               Typography.headline,
               styles.sectionTitle,
-              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
             ]}
           >
-            {Strings.settings.manageSection}
+            {strings.settings.manageSection}
           </Text>
         </View>
 
         {/* Manage Wallets Row */}
         <SettingRow
-          title={Strings.settings.manageWallets}
-          subtitle={Strings.settings.manageWalletsDesc}
+          title={strings.settings.manageWallets}
+          subtitle={strings.settings.manageWalletsDesc}
           icon="wallet-outline"
           iconColor={theme.primary}
           iconBg={theme.primaryMuted}
@@ -124,8 +220,8 @@ export default function ProfileScreen() {
 
         {/* Manage Categories Row */}
         <SettingRow
-          title={Strings.settings.manageCategories}
-          subtitle={Strings.settings.manageCategoriesDesc}
+          title={strings.settings.manageCategories}
+          subtitle={strings.settings.manageCategoriesDesc}
           icon="pricetags-outline"
           iconColor={BrandColors.jade500}
           iconBg={`${BrandColors.jade500}15`}
@@ -135,7 +231,7 @@ export default function ProfileScreen() {
         {/* Sign Out Action */}
         <View style={styles.logoutWrapper}>
           <Button
-            title={Strings.dashboard.signOutButton}
+            title={strings.dashboard.signOutButton}
             onPress={handleSignOut}
             variant="danger"
             loading={signingOut}
@@ -194,6 +290,49 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: '700',
+  },
+  languageCard: {
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  languageHeader: {
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  langIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langTextCol: {
+    flex: 1,
+  },
+  langTitle: {
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  segmentedTrack: {
+    flexDirection: 'row',
+    borderRadius: Radii.lg,
+    padding: 4,
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radii.md,
+  },
+  segmentTabActive: {
+    elevation: 2,
+  },
+  segmentText: {
+    fontSize: 14,
   },
   logoutWrapper: {
     marginTop: Spacing.lg,

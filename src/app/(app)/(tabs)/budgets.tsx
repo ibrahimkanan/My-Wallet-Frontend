@@ -38,10 +38,12 @@ import {
   GetCategoriesResponse,
 } from '../../../types/api';
 import { formatCurrency } from '../../../utils/formatters';
+import { useLanguage } from '../../../i18n';
 
 export default function BudgetsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings, t } = useLanguage();
 
   // Selected Month/Year Period
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -91,7 +93,7 @@ export default function BudgetsScreen() {
       }
     } catch (err: any) {
       console.warn('[Budgets] Error fetching budgets data:', err);
-      setGeneralError(err.response?.data?.error || 'تعذر تحميل بيانات الميزانيات');
+      setGeneralError(err.response?.data?.error || strings.budgets.failedToLoadBudgets);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -159,13 +161,13 @@ export default function BudgetsScreen() {
   const handleSaveBudget = async () => {
     const numericAmount = parseFloat(formAmountStr);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      setFormError(Strings.budgets.amountRequired);
+      setFormError(strings.budgets.amountRequired);
       return;
     }
 
     if (formMode === 'add') {
       if (!formCategoryId) {
-        setFormError('يرجى اختيار فئة');
+        setFormError(strings.budgets.categoryRequired);
         return;
       }
       try {
@@ -181,7 +183,7 @@ export default function BudgetsScreen() {
         fetchBudgetsData(true);
       } catch (err: any) {
         console.warn('[Budgets] Create budget error:', err);
-        setFormError(err.response?.data?.error || 'فشل إنشاء ميزانية الفئة');
+        setFormError(err.response?.data?.error || strings.budgets.failedToCreateBudget);
       } finally {
         setSubmitting(false);
       }
@@ -208,7 +210,7 @@ export default function BudgetsScreen() {
         fetchBudgetsData(true);
       } catch (err: any) {
         console.warn('[Budgets] Update budget error:', err);
-        setFormError(err.response?.data?.error || 'فشل تحديث الميزانية');
+        setFormError(err.response?.data?.error || strings.budgets.failedToUpdateBudget);
       } finally {
         setSubmitting(false);
       }
@@ -238,14 +240,14 @@ export default function BudgetsScreen() {
     const isOver = spent > budgeted;
 
     let color = theme.income;
-    let label: string = Strings.budgets.statusFine;
+    let label: string = strings.budgets.statusFine;
 
     if (isOver) {
       color = theme.expense;
-      label = Strings.budgets.statusOver;
+      label = strings.budgets.statusOver;
     } else if (percentage >= 80) {
       color = theme.warning;
-      label = Strings.budgets.statusWarning;
+      label = strings.budgets.statusWarning;
     }
 
     return { ratio, percentage, isOver, color, label };
@@ -254,19 +256,19 @@ export default function BudgetsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Top Header Bar */}
-      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
+      <View style={[styles.headerBar, { borderBottomColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View>
           <Text
             style={[
               Typography.title1,
               styles.screenTitle,
-              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
             ]}
           >
-            {Strings.budgets.title}
+            {strings.budgets.title}
           </Text>
-          <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-            {Strings.budgets.subtitle}
+          <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+            {strings.budgets.subtitle}
           </Text>
         </View>
 
@@ -274,11 +276,11 @@ export default function BudgetsScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={openAddModal}
-          style={[styles.addHeaderBtn, { backgroundColor: theme.primary }]}
+          style={[styles.addHeaderBtn, { backgroundColor: theme.primary, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         >
           <Ionicons name="add" size={18} color="#FFFFFF" />
           <Text style={[Typography.caption, styles.addBtnText, { color: '#FFFFFF' }]}>
-            {Strings.budgets.addCategoryBudget}
+            {strings.budgets.addCategoryBudget}
           </Text>
         </TouchableOpacity>
       </View>
@@ -340,17 +342,17 @@ export default function BudgetsScreen() {
                     Shadows.elevated,
                   ]}
                 >
-                  <View style={styles.heroTopRow}>
+                  <View style={[styles.heroTopRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={styles.heroTitleCol}>
-                      <Text style={[Typography.headline, { color: theme.textPrimary }]}>
-                        {Strings.budgets.overallBudget}
+                      <Text style={[Typography.headline, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {strings.budgets.overallBudget}
                       </Text>
-                      <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                        {Strings.budgets.overallBudgetSubtitle}
+                      <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {strings.budgets.overallBudgetSubtitle}
                       </Text>
                     </View>
 
-                    <View style={[styles.statusBadge, { backgroundColor: `${status.color}15` }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: `${status.color}15`, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                       <View style={[styles.statusDot, { backgroundColor: status.color }]} />
                       <Text style={[Typography.caption, { color: status.color, fontWeight: '700' }]}>
                         {status.label} ({status.percentage}%)
@@ -367,25 +369,31 @@ export default function BudgetsScreen() {
                   />
 
                   {/* 3-column stats */}
-                  <View style={styles.statsRow}>
+                  <View style={[styles.statsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <View style={styles.statCol}>
-                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                        {Strings.budgets.budgeted}
-                      </Text>
-                      <Text style={[Typography.subhead, styles.statValue, { color: theme.textPrimary }]}>
-                        {formatCurrency(overallBudget.budgeted)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.statCol}>
-                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                        {Strings.budgets.spent}
+                      <Text style={[Typography.caption, { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {strings.budgets.budgeted}
                       </Text>
                       <Text
                         style={[
                           Typography.subhead,
                           styles.statValue,
-                          { color: status.isOver ? theme.expense : theme.textPrimary },
+                          { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+                        ]}
+                      >
+                        {formatCurrency(overallBudget.budgeted)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statCol}>
+                      <Text style={[Typography.caption, { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {strings.budgets.spent}
+                      </Text>
+                      <Text
+                        style={[
+                          Typography.subhead,
+                          styles.statValue,
+                          { color: status.isOver ? theme.expense : theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                         ]}
                       >
                         {formatCurrency(overallBudget.spent)}
@@ -393,8 +401,8 @@ export default function BudgetsScreen() {
                     </View>
 
                     <View style={styles.statCol}>
-                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                        {Strings.budgets.remaining}
+                      <Text style={[Typography.caption, { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' }]}>
+                        {strings.budgets.remaining}
                       </Text>
                       <Text
                         style={[
@@ -402,6 +410,7 @@ export default function BudgetsScreen() {
                           styles.statValue,
                           {
                             color: overallBudget.remaining >= 0 ? theme.income : theme.expense,
+                            textAlign: isRTL ? 'right' : 'left',
                           },
                         ]}
                       >
@@ -410,9 +419,9 @@ export default function BudgetsScreen() {
                     </View>
                   </View>
 
-                  <View style={[styles.editHintRow, { borderTopColor: theme.borderSubtle }]}>
+                  <View style={[styles.editHintRow, { borderTopColor: theme.borderSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                      اضغط لتعديل سقف الميزانية العامة
+                      {strings.budgets.tapToEditOverall}
                     </Text>
                     <Ionicons name="pencil-outline" size={14} color={theme.textTertiary} />
                   </View>
@@ -440,30 +449,30 @@ export default function BudgetsScreen() {
             >
               <Ionicons name="pie-chart-outline" size={32} color={theme.primary} />
               <Text style={[Typography.subhead, { color: theme.textPrimary, fontWeight: '700', marginTop: Spacing.xs }]}>
-                {Strings.home.noBudgetSet}
+                {strings.home.noBudgetSet}
               </Text>
               <Text style={[Typography.caption, { color: theme.primary, marginTop: 2, fontWeight: '600' }]}>
-                {Strings.home.setBudgetPrompt}
+                {strings.home.setBudgetPrompt}
               </Text>
             </TouchableOpacity>
           )}
 
           {/* CATEGORY BUDGETS SECTION */}
-          <View style={styles.sectionHeaderRow}>
+          <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[Typography.headline, styles.sectionTitle, { color: theme.textPrimary }]}>
-              {Strings.budgets.categoryBudgetsTitle}
+              {strings.budgets.categoryBudgetsTitle}
             </Text>
             <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-              {categoryBudgets.length} ميزانية
+              {t('budgets.budgetsCount', { count: categoryBudgets.length })}
             </Text>
           </View>
 
           {categoryBudgets.length === 0 ? (
             <EmptyState
               icon="pie-chart-outline"
-              title={Strings.budgets.noCategoryBudgets}
-              subtitle={Strings.budgets.noCategoryBudgetsSubtitle}
-              actionTitle={Strings.budgets.addCategoryBudget}
+              title={strings.budgets.noCategoryBudgets}
+              subtitle={strings.budgets.noCategoryBudgetsSubtitle}
+              actionTitle={strings.budgets.addCategoryBudget}
               onAction={openAddModal}
             />
           ) : (
@@ -514,17 +523,17 @@ export default function BudgetsScreen() {
       {/* DELETE CONFIRMATION DIALOG */}
       <ConfirmModal
         visible={Boolean(deleteConfirmItem)}
-        title={Strings.budgets.deleteConfirmTitle}
+        title={strings.budgets.deleteConfirmTitle}
         message={
           deleteConfirmItem
             ? deleteConfirmItem.category_id === null
-              ? `${Strings.budgets.deleteConfirmBody(Strings.budgets.overallBudget)} ${Strings.budgets.deleteOverallNote}`
-              : Strings.budgets.deleteConfirmBody(
-                  categoryMap.get(deleteConfirmItem.category_id || '')?.name || ''
-                )
+              ? `${t('budgets.deleteConfirmBody', { name: strings.budgets.overallBudget })} ${strings.budgets.deleteOverallNote}`
+              : t('budgets.deleteConfirmBody', {
+                  name: categoryMap.get(deleteConfirmItem.category_id || '')?.name || '',
+                })
             : ''
         }
-        confirmLabel={Strings.budgets.confirmDelete}
+        confirmLabel={strings.budgets.confirmDelete}
         loading={deleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteConfirmItem(null)}

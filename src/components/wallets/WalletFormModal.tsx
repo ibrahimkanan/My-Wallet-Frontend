@@ -9,15 +9,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { WalletTypeCard } from '../ui/WalletTypeCard';
 import { Wallet, WalletType } from '../../types/models';
+import { useLanguage } from '../../i18n';
 
 interface WalletFormModalProps {
   visible: boolean;
@@ -46,6 +45,7 @@ export function WalletFormModal({
 }: WalletFormModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   return (
     <Modal
@@ -60,9 +60,9 @@ export function WalletFormModal({
       >
         <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
           {/* Modal Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[Typography.title3, styles.modalTitle, { color: theme.textPrimary }]}>
-              {editingWallet ? Strings.wallets.editWallet : Strings.wallets.addWallet}
+              {editingWallet ? strings.wallets.editWallet : strings.wallets.addWallet}
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -80,8 +80,8 @@ export function WalletFormModal({
           >
             {/* Wallet Name Input */}
             <Input
-              label={Strings.wallets.walletNameLabel}
-              placeholder={Strings.wallets.walletNamePlaceholder}
+              label={strings.wallets.walletNameLabel}
+              placeholder={strings.wallets.walletNamePlaceholder}
               value={formName}
               onChangeText={onChangeName}
               error={formError}
@@ -93,16 +93,16 @@ export function WalletFormModal({
               style={[
                 Typography.subhead,
                 styles.typeSectionLabel,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.wallets.walletTypeLabel}
+              {strings.wallets.walletTypeLabel}
             </Text>
 
             <WalletTypeCard
               type="bank"
-              title={Strings.onboarding.walletBankTitle}
-              description={Strings.onboarding.walletBankDesc}
+              title={strings.onboarding.walletBankTitle}
+              description={strings.onboarding.walletBankDesc}
               selected={formType === 'bank'}
               onSelect={() => onChangeType('bank')}
               disabled={submitting}
@@ -110,8 +110,8 @@ export function WalletFormModal({
 
             <WalletTypeCard
               type="cash"
-              title={Strings.onboarding.walletCashTitle}
-              description={Strings.onboarding.walletCashDesc}
+              title={strings.onboarding.walletCashTitle}
+              description={strings.onboarding.walletCashDesc}
               selected={formType === 'cash'}
               onSelect={() => onChangeType('cash')}
               disabled={submitting}
@@ -119,8 +119,8 @@ export function WalletFormModal({
 
             <WalletTypeCard
               type="card"
-              title={Strings.onboarding.walletCardTitle}
-              description={Strings.onboarding.walletCardDesc}
+              title={strings.onboarding.walletCardTitle}
+              description={strings.onboarding.walletCardDesc}
               selected={formType === 'card'}
               onSelect={() => onChangeType('card')}
               disabled={submitting}
@@ -130,22 +130,22 @@ export function WalletFormModal({
               style={[
                 Typography.caption,
                 styles.balanceNote,
-                { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.wallets.balanceHelper}
+              {strings.wallets.balanceHelper}
             </Text>
 
             {/* Action Buttons */}
             <View style={styles.modalActionsRow}>
               <Button
-                title={editingWallet ? Strings.wallets.saveChanges : Strings.wallets.saveWallet}
+                title={editingWallet ? strings.wallets.saveChanges : strings.wallets.saveWallet}
                 onPress={onSubmit}
                 loading={submitting}
                 style={styles.modalSubmitButton}
               />
               <Button
-                title={Strings.common.cancel}
+                title={strings.common.cancel}
                 onPress={onClose}
                 variant="secondary"
                 disabled={submitting}

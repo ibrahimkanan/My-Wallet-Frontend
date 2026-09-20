@@ -5,11 +5,10 @@ import {
   StyleSheet,
   Modal,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
+import { useLanguage } from '../../i18n';
 import { Button } from './Button';
 
 export interface ConfirmModalProps {
@@ -31,7 +30,7 @@ export function ConfirmModal({
   title,
   message,
   confirmLabel,
-  cancelLabel = Strings.common.cancel,
+  cancelLabel,
   variant = 'danger',
   icon = 'alert-circle',
   loading = false,
@@ -41,9 +40,12 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { strings } = useLanguage();
+
   const isDanger = variant === 'danger';
   const accentColor = isDanger ? theme.expense : theme.primary;
-  const defaultConfirmLabel = isDanger ? Strings.common.delete : Strings.common.confirm;
+  const defaultConfirmLabel = isDanger ? strings.common.delete : strings.common.confirm;
+  const displayCancelLabel = cancelLabel ?? strings.common.cancel;
 
   return (
     <Modal
@@ -106,7 +108,7 @@ export function ConfirmModal({
               loading={loading}
             />
             <Button
-              title={cancelLabel}
+              title={displayCancelLabel}
               onPress={onCancel}
               variant="secondary"
               disabled={loading}

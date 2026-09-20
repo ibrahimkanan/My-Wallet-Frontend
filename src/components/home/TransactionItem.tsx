@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, useColorScheme, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Transaction } from '../../types/models';
 import { formatCurrency, formatRelativeDate } from '../../utils/formatters';
+import { useLanguage } from '../../i18n';
 
 export interface TransactionItemProps {
   transaction: Transaction;
@@ -27,14 +27,15 @@ export function TransactionItem({
 }: TransactionItemProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings } = useLanguage();
 
   const isIncome = transaction.type === 'income';
   const amountColor = isIncome ? theme.income : theme.expense;
   const sign = isIncome ? '+' : '-';
 
-  const displayName = categoryName || transaction.note || Strings.home.generalCategory;
-  const displayWallet = walletName || Strings.home.walletDefault;
-  const dateFormatted = formatRelativeDate(transaction.transaction_date);
+  const displayName = categoryName || transaction.note || strings.home.generalCategory;
+  const displayWallet = walletName || strings.home.walletDefault;
+  const dateFormatted = formatRelativeDate(transaction.transaction_date, language);
 
   const resolvedIcon = categoryIcon
     ? (categoryIcon as any)
@@ -51,6 +52,7 @@ export function TransactionItem({
         {
           backgroundColor: theme.surface,
           borderColor: theme.border,
+          flexDirection: isRTL ? 'row-reverse' : 'row',
         },
         Shadows.subtle,
       ]}
@@ -61,6 +63,7 @@ export function TransactionItem({
           styles.iconWrapper,
           {
             backgroundColor: isIncome ? `${theme.income}18` : `${theme.expense}18`,
+            marginHorizontal: Spacing.xs,
           },
         ]}
       >
@@ -68,9 +71,9 @@ export function TransactionItem({
       </View>
 
       {/* Info Column */}
-      <View style={styles.detailsCol}>
+      <View style={[styles.detailsCol, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
         <Text
-          style={[Typography.bodyMedium, styles.titleText, { color: theme.textPrimary }]}
+          style={[Typography.bodyMedium, styles.titleText, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}
           numberOfLines={1}
         >
           {displayName}
@@ -78,19 +81,19 @@ export function TransactionItem({
 
         {transaction.note && categoryName ? (
           <Text
-            style={[Typography.caption, styles.noteText, { color: theme.textSecondary }]}
+            style={[Typography.caption, styles.noteText, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}
             numberOfLines={1}
           >
             {transaction.note}
           </Text>
         ) : null}
 
-        <View style={styles.subMetaRow}>
+        <View style={[styles.subMetaRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <Ionicons
             name="wallet-outline"
             size={12}
             color={theme.textTertiary}
-            style={{ marginRight: 3 }}
+            style={{ marginHorizontal: 3 }}
           />
           <Text style={[Typography.caption, { color: theme.textTertiary, fontSize: 11 }]}>
             {displayWallet}
@@ -107,9 +110,9 @@ export function TransactionItem({
       </View>
 
       {/* Amount & Actions */}
-      <View style={styles.amountCol}>
+      <View style={[styles.amountCol, { alignItems: isRTL ? 'flex-start' : 'flex-end' }]}>
         <Text
-          style={[Typography.subhead, styles.amountText, { color: amountColor }]}
+          style={[Typography.subhead, styles.amountText, { color: amountColor, textAlign: isRTL ? 'right' : 'left' }]}
           numberOfLines={1}
         >
           {sign} {formatCurrency(Number(transaction.amount))}

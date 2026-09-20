@@ -20,6 +20,7 @@ import {
   Shadows,
 } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
+import { useLanguage } from '../../i18n';
 import {
   BackButton,
   ErrorBanner,
@@ -39,6 +40,7 @@ export default function WalletsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings, t } = useLanguage();
 
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function WalletsScreen() {
       }
     } catch (err) {
       console.warn('[Wallets] Failed to load wallets:', err);
-      setFetchError(getErrorMessage(err, Strings.common.errorOccurred));
+      setFetchError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -102,7 +104,7 @@ export default function WalletsScreen() {
   const handleSaveWallet = async () => {
     const trimmed = formName.trim();
     if (!trimmed) {
-      setFormError(Strings.wallets.nameRequired);
+      setFormError(strings.wallets.nameRequired);
       return;
     }
 
@@ -112,7 +114,7 @@ export default function WalletsScreen() {
     });
 
     if (isDuplicate) {
-      setFormError('اسم المحفظة مسجل مسبقاً، يرجى اختيار اسم آخر.');
+      setFormError(strings.wallets.duplicateNameError);
       return;
     }
 
@@ -135,7 +137,7 @@ export default function WalletsScreen() {
       setIsFormVisible(false);
       fetchWallets();
     } catch (err: unknown) {
-      setFormError(getErrorMessage(err, Strings.common.errorOccurred));
+      setFormError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +152,7 @@ export default function WalletsScreen() {
       setWalletToDelete(null);
       fetchWallets();
     } catch (err: unknown) {
-      setDeleteError(getErrorMessage(err, Strings.common.errorOccurred));
+      setDeleteError(getErrorMessage(err, strings.common.errorOccurred));
     } finally {
       setDeleting(false);
     }
@@ -164,26 +166,26 @@ export default function WalletsScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {/* Top Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.headerLeft}>
+      <View style={[styles.topHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.headerLeft, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <BackButton onPress={() => router.back()} />
           <View style={styles.titleWrapper}>
             <Text
               style={[
                 Typography.title2,
                 styles.title,
-                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.wallets.title}
+              {strings.wallets.title}
             </Text>
             <Text
               style={[
                 Typography.caption,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.wallets.subtitle}
+              {strings.wallets.subtitle}
             </Text>
           </View>
         </View>
@@ -191,11 +193,11 @@ export default function WalletsScreen() {
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleOpenAdd}
-          style={[styles.addHeaderButton, { backgroundColor: theme.primary }]}
+          style={[styles.addHeaderButton, { backgroundColor: theme.primary, flexDirection: isRTL ? 'row-reverse' : 'row' }]}
         >
           <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={[Typography.subhead, styles.addHeaderText, { color: '#FFFFFF' }]}>
-            {Strings.wallets.addWallet}
+            {strings.wallets.addWallet}
           </Text>
         </TouchableOpacity>
       </View>
@@ -229,10 +231,10 @@ export default function WalletsScreen() {
               Shadows.card,
             ]}
           >
-            <View style={styles.summaryRow}>
+            <View style={[styles.summaryRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View>
-                <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                  {Strings.wallets.totalBalanceLabel}
+                <Text style={[Typography.caption, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                  {strings.wallets.totalBalanceLabel}
                 </Text>
                 <Text
                   style={[
@@ -240,7 +242,7 @@ export default function WalletsScreen() {
                     styles.totalBalanceText,
                     {
                       color: totalBalance >= 0 ? theme.primary : theme.expense,
-                      textAlign: I18nManager.isRTL ? 'right' : 'left',
+                      textAlign: isRTL ? 'right' : 'left',
                     },
                   ]}
                 >
@@ -248,10 +250,10 @@ export default function WalletsScreen() {
                 </Text>
               </View>
 
-              <View style={[styles.walletCountBadge, { backgroundColor: theme.primaryMuted }]}>
+              <View style={[styles.walletCountBadge, { backgroundColor: theme.primaryMuted, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Ionicons name="wallet" size={16} color={theme.primary} />
                 <Text style={[Typography.subhead, { color: theme.primary, fontWeight: '700' }]}>
-                  {Strings.dashboard.accountsUnit(wallets.length)}
+                  {t('dashboard.accountsUnit', { count: wallets.length })}
                 </Text>
               </View>
             </View>
@@ -262,15 +264,15 @@ export default function WalletsScreen() {
             <EmptyState
               icon="alert-circle-outline"
               title={fetchError}
-              subtitle={Strings.common.networkError}
-              actionTitle={Strings.common.retry}
+              subtitle={strings.common.networkError}
+              actionTitle={strings.common.retry}
               onAction={fetchWallets}
             />
           ) : wallets.length === 0 ? (
             <EmptyState
               icon="wallet-outline"
-              title={Strings.wallets.emptyWallets}
-              actionTitle={Strings.wallets.addFirstWallet}
+              title={strings.wallets.emptyWallets}
+              actionTitle={strings.wallets.addFirstWallet}
               onAction={handleOpenAdd}
             />
           ) : (
@@ -311,9 +313,9 @@ export default function WalletsScreen() {
       {/* Delete Confirmation Modal (Hard to miss cascading deletion warning) */}
       <ConfirmModal
         visible={Boolean(walletToDelete)}
-        title={Strings.wallets.deleteWalletWarningTitle}
-        message={walletToDelete ? Strings.wallets.deleteWalletWarningBody(walletToDelete.name) : ''}
-        confirmLabel={Strings.wallets.confirmDelete}
+        title={strings.wallets.deleteWalletWarningTitle}
+        message={walletToDelete ? t('wallets.deleteWalletWarningBody', { name: walletToDelete.name }) : ''}
+        confirmLabel={strings.wallets.confirmDelete}
         loading={deleting}
         error={deleteError}
         onConfirm={handleConfirmDelete}

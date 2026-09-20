@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
+import { useLanguage } from '../../i18n';
 
 export interface SettingRowProps {
   title: string;
@@ -29,6 +29,7 @@ export function SettingRow({
 }: SettingRowProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL } = useLanguage();
 
   const color = iconColor || theme.primary;
   const bg = iconBg || theme.primaryMuted;
@@ -39,11 +40,20 @@ export function SettingRow({
       onPress={onPress}
       style={[
         styles.card,
-        { backgroundColor: theme.surface, borderColor: theme.border },
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+          flexDirection: isRTL ? 'row-reverse' : 'row',
+        },
         Shadows.card,
       ]}
     >
-      <View style={styles.cardLeft}>
+      <View
+        style={[
+          styles.cardLeft,
+          { flexDirection: isRTL ? 'row-reverse' : 'row' },
+        ]}
+      >
         <View style={[styles.iconBox, { backgroundColor: bg }]}>
           <Ionicons name={icon} size={22} color={color} />
         </View>
@@ -52,7 +62,7 @@ export function SettingRow({
             style={[
               Typography.subhead,
               styles.title,
-              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+              { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
             ]}
           >
             {title}
@@ -61,7 +71,7 @@ export function SettingRow({
             <Text
               style={[
                 Typography.caption,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
               {subtitle}
@@ -70,7 +80,7 @@ export function SettingRow({
         </View>
       </View>
       <Ionicons
-        name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+        name={isRTL ? 'chevron-back' : 'chevron-forward'}
         size={20}
         color={theme.textTertiary}
       />
@@ -80,7 +90,6 @@ export function SettingRow({
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: Radii.xl,
@@ -89,7 +98,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   cardLeft: {
-    flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
     flex: 1,

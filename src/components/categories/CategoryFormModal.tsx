@@ -13,16 +13,37 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Category, CategoryType } from '../../types/models';
+import { useLanguage } from '../../i18n';
 
 export interface PresetIconItem {
   name: string;
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
 }
+
+const PRESET_ICON_LABELS: Record<string, { ar: string; en: string }> = {
+  'cart-outline': { ar: 'تسوق', en: 'Shopping' },
+  'restaurant-outline': { ar: 'طعام', en: 'Food' },
+  'car-outline': { ar: 'مواصلات', en: 'Transport' },
+  'flash-outline': { ar: 'فواتير', en: 'Bills' },
+  'home-outline': { ar: 'سكن', en: 'Housing' },
+  'medkit-outline': { ar: 'صحة', en: 'Health' },
+  'film-outline': { ar: 'ترفيه', en: 'Entertainment' },
+  'school-outline': { ar: 'تعليم', en: 'Education' },
+  'airplane-outline': { ar: 'سفر', en: 'Travel' },
+  'gift-outline': { ar: 'هدايا', en: 'Gifts' },
+  'fitness-outline': { ar: 'رياضة', en: 'Fitness' },
+  'shirt-outline': { ar: 'ملابس', en: 'Clothing' },
+  'cafe-outline': { ar: 'كافيه', en: 'Cafe' },
+  'cash-outline': { ar: 'راتب', en: 'Salary' },
+  'trending-up-outline': { ar: 'استثمار', en: 'Investment' },
+  'briefcase-outline': { ar: 'عمل حر', en: 'Freelance' },
+  'wallet-outline': { ar: 'مكافأة', en: 'Bonus' },
+  'pricetag-outline': { ar: 'أخرى', en: 'Other' },
+};
 
 export const CATEGORY_PRESET_ICONS: PresetIconItem[] = [
   { name: 'cart-outline', icon: 'cart-outline', label: 'تسوق' },
@@ -76,6 +97,7 @@ export function CategoryFormModal({
 }: CategoryFormModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings } = useLanguage();
   const activeBadgeColor = formType === 'expense' ? theme.expense : theme.income;
 
   return (
@@ -91,9 +113,9 @@ export function CategoryFormModal({
       >
         <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
           {/* Modal Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[Typography.title3, styles.modalTitle, { color: theme.textPrimary }]}>
-              {editingCategory ? Strings.categories.editCategory : Strings.categories.addCategory}
+              {editingCategory ? strings.categories.editCategory : strings.categories.addCategory}
             </Text>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -114,18 +136,19 @@ export function CategoryFormModal({
               style={[
                 Typography.subhead,
                 styles.formSectionLabel,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.categories.categoryTypeLabel}
+              {strings.categories.categoryTypeLabel}
             </Text>
 
-            <View style={[styles.typeSelectorRow, { backgroundColor: theme.surfaceSubtle }]}>
+            <View style={[styles.typeSelectorRow, { backgroundColor: theme.surfaceSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => onChangeType('expense')}
                 style={[
                   styles.typeSelectorOption,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   formType === 'expense' && [
                     styles.typeSelectorOptionActive,
                     { backgroundColor: theme.surface },
@@ -137,6 +160,7 @@ export function CategoryFormModal({
                   name="arrow-up"
                   size={16}
                   color={formType === 'expense' ? theme.expense : theme.textSecondary}
+                  style={{ marginHorizontal: 4 }}
                 />
                 <Text
                   style={[
@@ -147,7 +171,7 @@ export function CategoryFormModal({
                     },
                   ]}
                 >
-                  {Strings.home.typeExpense}
+                  {strings.home.typeExpense}
                 </Text>
               </TouchableOpacity>
 
@@ -156,6 +180,7 @@ export function CategoryFormModal({
                 onPress={() => onChangeType('income')}
                 style={[
                   styles.typeSelectorOption,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   formType === 'income' && [
                     styles.typeSelectorOptionActive,
                     { backgroundColor: theme.surface },
@@ -167,6 +192,7 @@ export function CategoryFormModal({
                   name="arrow-down"
                   size={16}
                   color={formType === 'income' ? theme.income : theme.textSecondary}
+                  style={{ marginHorizontal: 4 }}
                 />
                 <Text
                   style={[
@@ -177,15 +203,15 @@ export function CategoryFormModal({
                     },
                   ]}
                 >
-                  {Strings.home.typeIncome}
+                  {strings.home.typeIncome}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {/* Category Name Input */}
             <Input
-              label={Strings.categories.categoryNameLabel}
-              placeholder={Strings.categories.categoryNamePlaceholder}
+              label={strings.categories.categoryNameLabel}
+              placeholder={strings.categories.categoryNamePlaceholder}
               value={formName}
               onChangeText={onChangeName}
               error={nameError}
@@ -197,15 +223,16 @@ export function CategoryFormModal({
               style={[
                 Typography.subhead,
                 styles.formSectionLabel,
-                { color: theme.textSecondary, marginTop: Spacing.sm, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, marginTop: Spacing.sm, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.categories.categoryIconLabel}
+              {strings.categories.categoryIconLabel}
             </Text>
 
             <View style={styles.iconGrid}>
               {CATEGORY_PRESET_ICONS.map((item) => {
                 const isSelected = formIcon === item.name;
+                const itemLabel = PRESET_ICON_LABELS[item.name]?.[language] || item.label;
 
                 return (
                   <TouchableOpacity
@@ -235,7 +262,7 @@ export function CategoryFormModal({
                         },
                       ]}
                     >
-                      {item.label}
+                      {itemLabel}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -245,13 +272,13 @@ export function CategoryFormModal({
             {/* Action Buttons */}
             <View style={styles.modalActionsRow}>
               <Button
-                title={editingCategory ? Strings.categories.saveChanges : Strings.categories.saveCategory}
+                title={editingCategory ? strings.categories.saveChanges : strings.categories.saveCategory}
                 onPress={onSubmit}
                 loading={submitting}
                 style={styles.modalSubmitButton}
               />
               <Button
-                title={Strings.common.cancel}
+                title={strings.common.cancel}
                 onPress={onClose}
                 variant="secondary"
                 disabled={submitting}

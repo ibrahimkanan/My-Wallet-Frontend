@@ -16,6 +16,7 @@ import { Strings } from '../../constants/strings';
 import { Button, Input, WalletTypeCard, ErrorBanner, BackButton } from '../../components/ui';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguage } from '../../i18n';
 import { WalletType } from '../../types/models';
 import { UpdateProfileResponse } from '../../types/api';
 import { getErrorMessage } from '../../utils/errors';
@@ -24,6 +25,7 @@ export default function OnboardingFinancialScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
@@ -85,7 +87,7 @@ export default function OnboardingFinancialScreen() {
       // 4. Navigate into main application
       router.replace('/');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'فشل إتمام الإعداد المالي'));
+      setError(getErrorMessage(err, strings.onboarding.financialSetupFailed));
     } finally {
       setLoading(false);
     }
@@ -111,17 +113,17 @@ export default function OnboardingFinancialScreen() {
 
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
-            <View style={styles.stepsRow}>
+            <View style={[styles.stepsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
             </View>
             <Text
               style={[
                 Typography.caption,
-                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.financialStepIndicator}
+              {strings.onboarding.financialStepIndicator}
             </Text>
           </View>
 
@@ -131,19 +133,19 @@ export default function OnboardingFinancialScreen() {
               style={[
                 Typography.title1,
                 styles.title,
-                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.financialTitle}
+              {strings.onboarding.financialTitle}
             </Text>
             <Text
               style={[
                 Typography.body,
                 styles.subtitle,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.financialSubtitle}
+              {strings.onboarding.financialSubtitle}
             </Text>
           </View>
 
@@ -159,11 +161,11 @@ export default function OnboardingFinancialScreen() {
                 {
                   color: theme.textSecondary,
                   fontWeight: '600',
-                  textAlign: I18nManager.isRTL ? 'right' : 'left',
+                  textAlign: isRTL ? 'right' : 'left',
                 },
               ]}
             >
-              {Strings.onboarding.selectWalletTypeLabel}
+              {strings.onboarding.selectWalletTypeLabel}
             </Text>
           </View>
 

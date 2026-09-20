@@ -25,9 +25,9 @@ export function getErrorMessage(
       // 2. Check for "error" key
       if (data.error && typeof data.error === 'string') {
         if (data.error === 'Email is required') return Strings.auth.emailRequired;
-        if (data.error === 'OTP is invalid or expired') return 'رمز التحقق غير صحيح أو منتهي الصلاحية';
+        if (data.error === 'OTP is invalid or expired') return Strings.auth.invalidOtp;
         if (data.error === 'invalid or expired token') return Strings.auth.sessionExpired;
-        if (data.error === 'Wallet not found') return 'المحفظة غير موجودة';
+        if (data.error === 'Wallet not found') return Strings.wallets.walletNotFound;
         return data.error;
       }
 

@@ -10,14 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { Strings } from '../../constants/strings';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Category, BudgetSummaryItem } from '../../types/models';
+import { useLanguage } from '../../i18n';
 
 interface BudgetFormModalProps {
   visible: boolean;
@@ -56,13 +55,14 @@ export function BudgetFormModal({
 }: BudgetFormModalProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const isEdit = mode === 'edit';
   const modalTitle = isEdit
     ? editingItem?.category_id === null
-      ? Strings.budgets.overallBudget
-      : categoryName || Strings.budgets.editBudget
-    : Strings.budgets.addCategoryBudget;
+      ? strings.budgets.overallBudget
+      : categoryName || strings.budgets.editBudget
+    : strings.budgets.addCategoryBudget;
 
   return (
     <Modal
@@ -83,7 +83,7 @@ export function BudgetFormModal({
           ]}
         >
           {/* Header */}
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
             <Text style={[Typography.title3, { color: theme.textPrimary, fontWeight: '700' }]}>
               {modalTitle}
             </Text>
@@ -111,7 +111,7 @@ export function BudgetFormModal({
                   { color: theme.textSecondary, textAlign: 'center', marginTop: Spacing.xs },
                 ]}
               >
-                {Strings.budgets.noAvailableCategories}
+                {strings.budgets.noAvailableCategories}
               </Text>
             </View>
           ) : (
@@ -119,13 +119,22 @@ export function BudgetFormModal({
               {/* Category Picker (Add Mode Only) */}
               {!isEdit && (
                 <>
-                  <Text style={[Typography.subhead, styles.inputLabel, { color: theme.textPrimary }]}>
-                    {Strings.budgets.selectCategory}
+                  <Text
+                    style={[
+                      Typography.subhead,
+                      styles.inputLabel,
+                      { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+                    ]}
+                  >
+                    {strings.budgets.selectCategory}
                   </Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categoryChipsScroll}
+                    contentContainerStyle={[
+                      styles.categoryChipsScroll,
+                      { flexDirection: isRTL ? 'row-reverse' : 'row' },
+                    ]}
                   >
                     {availableCategories.map((c) => {
                       const isSelected = selectedCategoryId === c.id;
@@ -139,6 +148,7 @@ export function BudgetFormModal({
                             {
                               backgroundColor: isSelected ? theme.primaryMuted : theme.surfaceSubtle,
                               borderColor: isSelected ? theme.primary : 'transparent',
+                              flexDirection: isRTL ? 'row-reverse' : 'row',
                             },
                           ]}
                         >
@@ -153,7 +163,7 @@ export function BudgetFormModal({
                               {
                                 color: isSelected ? theme.primary : theme.textPrimary,
                                 fontWeight: isSelected ? '700' : '500',
-                                marginLeft: 4,
+                                marginHorizontal: 4,
                               },
                             ]}
                           >
@@ -167,37 +177,47 @@ export function BudgetFormModal({
               )}
 
               {/* Amount Input */}
-              <Text style={[Typography.subhead, styles.inputLabel, { color: theme.textPrimary }]}>
-                {isEdit ? Strings.budgets.editAmountPrompt : Strings.budgets.budgetAmountLabel}
+              <Text
+                style={[
+                  Typography.subhead,
+                  styles.inputLabel,
+                  { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
+                ]}
+              >
+                {isEdit ? strings.budgets.editAmountPrompt : strings.budgets.budgetAmountLabel}
               </Text>
               <View
                 style={[
                   styles.amountInputRow,
-                  { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
+                  {
+                    backgroundColor: theme.surfaceSubtle,
+                    borderColor: theme.border,
+                    flexDirection: isRTL ? 'row-reverse' : 'row',
+                  },
                 ]}
               >
                 <TextInput
                   value={amountStr}
                   onChangeText={onChangeAmount}
-                  placeholder={Strings.budgets.budgetAmountPlaceholder}
+                  placeholder={strings.budgets.budgetAmountPlaceholder}
                   placeholderTextColor={theme.textTertiary}
                   keyboardType="decimal-pad"
                   style={[
                     Typography.title2,
                     styles.amountInput,
-                    { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                   autoFocus
                 />
                 <Text style={[Typography.subhead, { color: theme.primary, fontWeight: '700' }]}>
-                  {Strings.common.currency}
+                  {strings.common.currency}
                 </Text>
               </View>
 
               {/* Actions */}
               <View style={styles.modalActionRow}>
                 <Button
-                  title={isEdit ? Strings.budgets.saveChanges : Strings.budgets.saveBudget}
+                  title={isEdit ? strings.budgets.saveChanges : strings.budgets.saveBudget}
                   onPress={onSubmit}
                   loading={submitting}
                   variant="primary"
@@ -205,7 +225,7 @@ export function BudgetFormModal({
 
                 {isEdit && onDelete && (
                   <Button
-                    title={Strings.budgets.deleteBudget}
+                    title={strings.budgets.deleteBudget}
                     onPress={onDelete}
                     variant="ghost"
                     style={{ marginTop: Spacing.xs }}

@@ -6,15 +6,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Button, Input, ErrorBanner } from '../../components/ui';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguage } from '../../i18n';
 import api from '../../services/api';
 import { getErrorMessage, getRateLimitSeconds } from '../../utils/errors';
 
@@ -22,6 +24,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, setLanguage, strings } = useLanguage();
 
   const sessionExpired = useAuthStore((state) => state.sessionExpired);
   const setSessionExpired = useAuthStore((state) => state.setSessionExpired);
@@ -116,6 +119,24 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Top Bar with Language Switcher */}
+          <View style={[styles.topBar, { flexDirection: isRTL ? 'row' : 'row-reverse' }]}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              style={[
+                styles.langTogglePill,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+                Shadows.subtle,
+              ]}
+            >
+              <Ionicons name="globe-outline" size={14} color={theme.primary} />
+              <Text style={[Typography.caption, { color: theme.textPrimary, fontWeight: '700' }]}>
+                {language === 'en' ? 'العربية' : 'English'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Header Brand Section */}
           <View style={styles.headerSection}>
             <View
@@ -128,10 +149,10 @@ export default function LoginScreen() {
             </View>
 
             <Text style={[Typography.title1, styles.title, { color: theme.textPrimary }]}>
-              {Strings.auth.loginTitle}
+              {strings.auth.loginTitle}
             </Text>
             <Text style={[Typography.body, styles.subtitle, { color: theme.textSecondary }]}>
-              {Strings.auth.loginSubtitle}
+              {strings.auth.loginSubtitle}
             </Text>
           </View>
 
@@ -208,8 +229,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.xxl,
+    paddingVertical: Spacing.xl,
     justifyContent: 'center',
+  },
+  topBar: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  langTogglePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radii.full,
+    borderWidth: 1,
   },
   headerSection: {
     alignItems: 'center',

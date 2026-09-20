@@ -17,6 +17,7 @@ import { Strings } from '../../constants/strings';
 import { Button, Input, ErrorBanner } from '../../components/ui';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { useLanguage } from '../../i18n';
 import { UpdateProfileResponse } from '../../types/api';
 import { getErrorMessage } from '../../utils/errors';
 
@@ -24,6 +25,7 @@ export default function OnboardingProfileScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
@@ -71,7 +73,7 @@ export default function OnboardingProfileScreen() {
       // Navigate to Step 2: Financial Setup
       router.push('/(onboarding)/financial');
     } catch (err: unknown) {
-      setError(getErrorMessage(err, 'فشل تحديث الملف الشخصي'));
+      setError(getErrorMessage(err, strings.onboarding.profileUpdateFailed));
     } finally {
       setLoading(false);
     }
@@ -90,17 +92,17 @@ export default function OnboardingProfileScreen() {
         >
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
-            <View style={styles.stepsRow}>
+            <View style={[styles.stepsRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               <View style={[styles.stepBar, { backgroundColor: theme.primary }]} />
               <View style={[styles.stepBar, { backgroundColor: theme.border }]} />
             </View>
             <Text
               style={[
                 Typography.caption,
-                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textTertiary, marginTop: Spacing.xs, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.profileStepIndicator}
+              {strings.onboarding.profileStepIndicator}
             </Text>
           </View>
 
@@ -110,19 +112,19 @@ export default function OnboardingProfileScreen() {
               style={[
                 Typography.title1,
                 styles.title,
-                { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.profileTitle}
+              {strings.onboarding.profileTitle}
             </Text>
             <Text
               style={[
                 Typography.body,
                 styles.subtitle,
-                { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' },
               ]}
             >
-              {Strings.onboarding.profileSubtitle}
+              {strings.onboarding.profileSubtitle}
             </Text>
           </View>
 
@@ -142,24 +144,33 @@ export default function OnboardingProfileScreen() {
             ) : null}
 
             {/* Read-only Confirmed Email Badge */}
-            <View style={[styles.emailBadge, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+            <View
+              style={[
+                styles.emailBadge,
+                {
+                  backgroundColor: theme.surfaceSubtle,
+                  borderColor: theme.border,
+                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                },
+              ]}
+            >
               <Text style={styles.checkIcon}>✓</Text>
               <View style={styles.emailTextCol}>
                 <Text
                   style={[
                     Typography.caption,
-                    { color: theme.textTertiary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    { color: theme.textTertiary, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                 >
-                  {Strings.onboarding.verifiedEmailLabel}
+                  {strings.onboarding.verifiedEmailLabel}
                 </Text>
                 <Text
                   style={[
                     Typography.bodyMedium,
-                    { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+                    { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' },
                   ]}
                 >
-                  {user?.email || 'تم توثيق البريد الإلكتروني'}
+                  {user?.email || strings.onboarding.emailVerified}
                 </Text>
               </View>
             </View>

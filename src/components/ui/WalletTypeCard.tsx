@@ -5,10 +5,10 @@ import {
   Text,
   StyleSheet,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { ThemeColors, Typography, Radii, Spacing, Shadows } from '../../constants/theme';
 import { WalletType } from '../../types/models';
+import { useLanguage } from '../../i18n';
 
 export interface WalletTypeCardProps {
   type: WalletType;
@@ -29,6 +29,7 @@ export function WalletTypeCard({
 }: WalletTypeCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL } = useLanguage();
 
   const getEmojiIcon = () => {
     switch (type) {
@@ -53,10 +54,16 @@ export function WalletTypeCard({
           backgroundColor: selected ? theme.surfaceElevated : theme.surface,
           borderColor: selected ? theme.primary : theme.border,
           borderWidth: selected ? 2 : 1,
+          flexDirection: isRTL ? 'row-reverse' : 'row',
         },
       ]}
     >
-      <View style={styles.leftRow}>
+      <View
+        style={[
+          styles.leftRow,
+          { flexDirection: isRTL ? 'row-reverse' : 'row' },
+        ]}
+      >
         <View
           style={[
             styles.iconCircle,
@@ -75,7 +82,7 @@ export function WalletTypeCard({
               styles.title,
               {
                 color: selected ? theme.textBrand : theme.textPrimary,
-                textAlign: I18nManager.isRTL ? 'right' : 'left',
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -86,7 +93,7 @@ export function WalletTypeCard({
               Typography.footnote,
               {
                 color: theme.textSecondary,
-                textAlign: I18nManager.isRTL ? 'right' : 'left',
+                textAlign: isRTL ? 'right' : 'left',
               },
             ]}
           >
@@ -112,7 +119,6 @@ export function WalletTypeCard({
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: Spacing.lg,
@@ -120,7 +126,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   leftRow: {
-    flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     paddingEnd: Spacing.md,

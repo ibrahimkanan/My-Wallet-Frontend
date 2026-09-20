@@ -5,6 +5,7 @@ import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constant
 import { Strings } from '../../constants/strings';
 import { Wallet } from '../../types/models';
 import { formatCurrency, getWalletIcon } from '../../utils/formatters';
+import { useLanguage } from '../../i18n';
 
 interface WalletCardProps {
   wallet: Wallet;
@@ -14,6 +15,7 @@ interface WalletCardProps {
 export function WalletCard({ wallet, onPress }: WalletCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, strings } = useLanguage();
 
   const getWalletTypeLabel = (type: Wallet['type']): string => {
     return Strings.dashboard.accountTypeSuffix(type);
@@ -34,7 +36,7 @@ export function WalletCard({ wallet, onPress }: WalletCardProps) {
         Shadows.card,
       ]}
     >
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
         <View style={[styles.iconContainer, { backgroundColor: theme.primaryMuted }]}>
           <Ionicons name={getWalletIcon(wallet.type)} size={18} color={theme.primary} />
         </View>
@@ -46,10 +48,10 @@ export function WalletCard({ wallet, onPress }: WalletCardProps) {
       </View>
 
       <Text
-        style={[Typography.bodyMedium, styles.walletName, { color: theme.textPrimary }]}
+        style={[Typography.bodyMedium, styles.walletName, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}
         numberOfLines={1}
       >
-        {wallet.name || Strings.home.walletDefault}
+        {wallet.name || strings.home.walletDefault}
       </Text>
 
       <View style={styles.balanceContainer}>
@@ -59,6 +61,7 @@ export function WalletCard({ wallet, onPress }: WalletCardProps) {
             styles.balanceText,
             {
               color: numericBalance >= 0 ? theme.textPrimary : theme.expense,
+              textAlign: isRTL ? 'right' : 'left',
             },
           ]}
           numberOfLines={1}
@@ -76,7 +79,7 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     borderWidth: 1,
     padding: Spacing.md,
-    marginRight: Spacing.md,
+    marginHorizontal: Spacing.xs,
   },
   headerRow: {
     flexDirection: 'row',

@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   Modal,
   useColorScheme,
-  I18nManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
-import { ARABIC_MONTHS } from '../../utils/formatters';
+import { getLocalizedMonths } from '../../utils/formatters';
+import { Strings } from '../../constants/strings';
+import { useLanguage } from '../../i18n';
 import { Button } from './Button';
 
 interface MonthYearSelectorProps {
@@ -32,6 +33,7 @@ export function MonthYearSelector({
 }: MonthYearSelectorProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { isRTL, language } = useLanguage();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalYear, setModalYear] = useState(year);
@@ -70,7 +72,8 @@ export function MonthYearSelector({
     setModalVisible(true);
   };
 
-  const monthName = ARABIC_MONTHS[month - 1] || '';
+  const months = getLocalizedMonths(language);
+  const monthName = months[month - 1] || '';
   const displayLabel = mode === 'month' ? `${monthName} ${year}` : `${year}`;
 
   return (
@@ -85,15 +88,15 @@ export function MonthYearSelector({
           Shadows.subtle,
         ]}
       >
-        {/* Next Button (in RTL, forward is on the left) */}
+        {/* Left Arrow Button (Prev in LTR, Next in RTL) */}
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={handleNext}
+          onPress={isRTL ? handleNext : handlePrev}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[styles.arrowButton, { backgroundColor: theme.surfaceSubtle }]}
         >
           <Ionicons
-            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+            name="chevron-back"
             size={18}
             color={theme.textPrimary}
           />
@@ -122,15 +125,15 @@ export function MonthYearSelector({
           />
         </TouchableOpacity>
 
-        {/* Prev Button (in RTL, back is on the right) */}
+        {/* Right Arrow Button (Next in LTR, Prev in RTL) */}
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={handlePrev}
+          onPress={isRTL ? handlePrev : handleNext}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[styles.arrowButton, { backgroundColor: theme.surfaceSubtle }]}
         >
           <Ionicons
-            name={I18nManager.isRTL ? 'chevron-forward' : 'chevron-back'}
+            name="chevron-forward"
             size={18}
             color={theme.textPrimary}
           />
@@ -155,11 +158,11 @@ export function MonthYearSelector({
             {/* Year Selector within modal */}
             <View style={styles.modalYearRow}>
               <TouchableOpacity
-                onPress={() => setModalYear((prev) => prev - 1)}
+                onPress={() => setModalYear((prev) => prev + (isRTL ? 1 : -1))}
                 style={[styles.yearNavBtn, { backgroundColor: theme.surfaceSubtle }]}
               >
                 <Ionicons
-                  name={I18nManager.isRTL ? 'chevron-forward' : 'chevron-back'}
+                  name="chevron-back"
                   size={18}
                   color={theme.textPrimary}
                 />
@@ -170,11 +173,11 @@ export function MonthYearSelector({
               </Text>
 
               <TouchableOpacity
-                onPress={() => setModalYear((prev) => prev + 1)}
+                onPress={() => setModalYear((prev) => prev + (isRTL ? -1 : 1))}
                 style={[styles.yearNavBtn, { backgroundColor: theme.surfaceSubtle }]}
               >
                 <Ionicons
-                  name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
+                  name="chevron-forward"
                   size={18}
                   color={theme.textPrimary}
                 />
@@ -222,7 +225,7 @@ export function MonthYearSelector({
             {/* Months Grid (Only in Month mode) */}
             {mode === 'month' && (
               <View style={styles.monthsGrid}>
-                {ARABIC_MONTHS.map((mName, index) => {
+                {months.map((mName, index) => {
                   const mNum = index + 1;
                   const isCurrent = month === mNum && year === modalYear;
                   return (
@@ -261,7 +264,7 @@ export function MonthYearSelector({
 
             <View style={styles.modalActions}>
               <Button
-                title={mode === 'year' ? 'تأكيد' : 'إغلاق'}
+                title={mode === 'year' ? Strings.common.confirm : Strings.common.close}
                 onPress={() => {
                   if (mode === 'year') onChangeYear(modalYear);
                   setModalVisible(false);

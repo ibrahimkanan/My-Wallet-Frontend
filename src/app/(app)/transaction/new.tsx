@@ -15,15 +15,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  ThemeColors,
-  Typography,
-  Spacing,
-  Radii,
-  Shadows,
-} from '../../../constants/theme';
+import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
 import { Button, ErrorBanner, DatePickerModal, LoadingView } from '../../../components';
+import { useLanguage } from '../../../i18n';
 import api from '../../../services/api';
 import { Wallet, Category, Transaction, TransactionType } from '../../../types/models';
 import {
@@ -46,6 +41,7 @@ export default function TransactionFormModal() {
 
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
+  const { language, isRTL, strings } = useLanguage();
 
   // Form Fields
   const [type, setType] = useState<TransactionType>('expense');
@@ -122,7 +118,7 @@ export default function TransactionFormModal() {
           } else {
             // Previously linked wallet was deleted
             setSelectedWalletId(loadedWallets[0]?.id || '');
-            setWalletError(Strings.transactionForm.errorWalletNotFound);
+            setWalletError(strings.transactionForm.errorWalletNotFound);
           }
 
           // Check if category still exists
@@ -136,20 +132,19 @@ export default function TransactionFormModal() {
           setTransactionDate(existingTx.transaction_date.slice(0, 10));
           setNote(existingTx.note || '');
         } else {
-          setGeneralError(Strings.transactionForm.errorFailedToLoad);
+          setGeneralError(strings.transactionForm.errorFailedToLoad);
         }
       } else {
-        // CREATE MODE
-        // Rule: If the user only has ONE wallet, skip showing this picker entirely and auto-assign it silently
+        // Create Mode: Default wallet auto-assignment
         if (loadedWallets.length === 1) {
           setSelectedWalletId(loadedWallets[0].id);
-        } else if (loadedWallets.length > 1 && !selectedWalletId) {
+        } else if (loadedWallets.length > 1) {
           setSelectedWalletId(loadedWallets[0].id);
         }
       }
     } catch (err) {
-      console.warn('[TransactionForm] Error loading dependencies:', err);
-      setGeneralError(Strings.transactionForm.errorFailedToLoad);
+      console.warn('[TransactionForm] Failed to load form dependencies:', err);
+      setGeneralError(strings.transactionForm.errorFailedToLoad);
     } finally {
       setLoadingInitial(false);
     }
@@ -197,7 +192,7 @@ export default function TransactionFormModal() {
     // Validate Amount
     const numericAmount = parseFloat(amountStr);
     if (!amountStr.trim() || isNaN(numericAmount) || numericAmount <= 0) {
-      setAmountError(Strings.transactionForm.errorAmountRequired);
+      setAmountError(strings.transactionForm.errorAmountRequired);
       return;
     }
 
@@ -207,7 +202,7 @@ export default function TransactionFormModal() {
       if (wallets.length === 1) {
         walletIdToUse = wallets[0].id;
       } else {
-        setWalletError(Strings.transactionForm.errorWalletRequired);
+        setWalletError(strings.transactionForm.errorWalletRequired);
         return;
       }
     }
@@ -241,11 +236,11 @@ export default function TransactionFormModal() {
       // Form-level error mapping for 404 WALLET_NOT_FOUND / CATEGORY_NOT_FOUND
       if (status === 404) {
         if (errorMsg === 'Wallet not found') {
-          setWalletError(Strings.transactionForm.errorWalletNotFound);
+          setWalletError(strings.transactionForm.errorWalletNotFound);
           return;
         }
         if (errorMsg === 'Category not found') {
-          setCategoryError(Strings.transactionForm.errorCategoryNotFound);
+          setCategoryError(strings.transactionForm.errorCategoryNotFound);
           return;
         }
       }
@@ -255,7 +250,7 @@ export default function TransactionFormModal() {
         return;
       }
 
-      setGeneralError(errorMsg || Strings.transactionForm.errorFailedToSave);
+      setGeneralError(errorMsg || strings.transactionForm.errorFailedToSave);
     } finally {
       setSubmitting(false);
     }
@@ -268,7 +263,7 @@ export default function TransactionFormModal() {
         style={{ flex: 1 }}
       >
         {/* Top Header Bar */}
-        <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
+        <View style={[styles.topBar, { borderBottomColor: theme.border, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
           <TouchableOpacity
             activeOpacity={0.7}
             disabled={submitting}
@@ -280,8 +275,8 @@ export default function TransactionFormModal() {
 
           <Text style={[Typography.subhead, styles.topBarTitle, { color: theme.textPrimary }]}>
             {isEditing
-              ? Strings.transactionForm.editTitle
-              : Strings.transactionForm.addTitle}
+              ? strings.transactionForm.editTitle
+              : strings.transactionForm.addTitle}
           </Text>
 
           <View style={{ width: 36 }} />
@@ -306,7 +301,7 @@ export default function TransactionFormModal() {
             )}
 
             {/* TYPE TOGGLE: Income / Expense */}
-            <View style={[styles.toggleContainer, { backgroundColor: theme.surfaceSubtle }]}>
+            <View style={[styles.toggleContainer, { backgroundColor: theme.surfaceSubtle, flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
               {/* Expense Option */}
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -314,6 +309,7 @@ export default function TransactionFormModal() {
                 onPress={() => handleTypeToggle('expense')}
                 style={[
                   styles.toggleOption,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   type === 'expense' && [
                     styles.toggleActiveExpense,
                     { backgroundColor: theme.expenseBg, borderColor: theme.expenseBorder },
@@ -324,7 +320,7 @@ export default function TransactionFormModal() {
                   name="arrow-up-circle"
                   size={18}
                   color={type === 'expense' ? theme.expense : theme.textTertiary}
-                  style={{ marginRight: 6 }}
+                  style={{ marginHorizontal: 6 }}
                 />
                 <Text
                   style={[
@@ -335,7 +331,7 @@ export default function TransactionFormModal() {
                     },
                   ]}
                 >
-                  {Strings.transactionForm.typeExpense}
+                  {strings.transactionForm.typeExpense}
                 </Text>
               </TouchableOpacity>
 
@@ -346,6 +342,7 @@ export default function TransactionFormModal() {
                 onPress={() => handleTypeToggle('income')}
                 style={[
                   styles.toggleOption,
+                  { flexDirection: isRTL ? 'row-reverse' : 'row' },
                   type === 'income' && [
                     styles.toggleActiveIncome,
                     { backgroundColor: theme.incomeBg, borderColor: theme.incomeBorder },
@@ -356,7 +353,7 @@ export default function TransactionFormModal() {
                   name="arrow-down-circle"
                   size={18}
                   color={type === 'income' ? theme.income : theme.textTertiary}
-                  style={{ marginRight: 6 }}
+                  style={{ marginHorizontal: 6 }}
                 />
                 <Text
                   style={[
@@ -367,7 +364,7 @@ export default function TransactionFormModal() {
                     },
                   ]}
                 >
-                  {Strings.transactionForm.typeIncome}
+                  {strings.transactionForm.typeIncome}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -383,11 +380,11 @@ export default function TransactionFormModal() {
                 Shadows.card,
               ]}
             >
-              <Text style={[Typography.caption, styles.fieldLabel, { color: theme.textSecondary }]}>
-                {Strings.transactionForm.amountLabel}
+              <Text style={[Typography.caption, styles.fieldLabel, { color: theme.textSecondary, textAlign: isRTL ? 'right' : 'left' }]}>
+                {strings.transactionForm.amountLabel}
               </Text>
 
-              <View style={styles.amountInputRow}>
+              <View style={[styles.amountInputRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text
                   style={[
                     Typography.moneyHero,
@@ -407,7 +404,7 @@ export default function TransactionFormModal() {
                     setAmountStr(cleaned);
                     if (amountError) setAmountError(null);
                   }}
-                  placeholder={Strings.transactionForm.amountPlaceholder}
+                  placeholder={strings.transactionForm.amountPlaceholder}
                   placeholderTextColor={theme.textTertiary}
                   keyboardType="decimal-pad"
                   style={[
@@ -415,7 +412,7 @@ export default function TransactionFormModal() {
                     styles.amountTextInput,
                     {
                       color: accentColor,
-                      textAlign: I18nManager.isRTL ? 'right' : 'left',
+                      textAlign: isRTL ? 'right' : 'left',
                     },
                   ]}
                   autoFocus={!isEditing}
@@ -423,7 +420,7 @@ export default function TransactionFormModal() {
 
                 <View style={[styles.currencyBadge, { backgroundColor: accentBg }]}>
                   <Text style={[Typography.subhead, { color: accentColor, fontWeight: '700' }]}>
-                    {Strings.common.currency}
+                    {strings.common.currency}
                   </Text>
                 </View>
               </View>
@@ -442,29 +439,30 @@ export default function TransactionFormModal() {
               <View
                 style={[
                   styles.warningBox,
-                  { backgroundColor: theme.warningBg, borderColor: theme.warningBorder },
+                  { backgroundColor: theme.warningBg, borderColor: theme.warningBorder, flexDirection: isRTL ? 'row-reverse' : 'row' },
                 ]}
               >
                 <Ionicons name="warning-outline" size={20} color={theme.warning} />
                 <View style={{ flex: 1, marginHorizontal: Spacing.sm }}>
-                  <Text style={[Typography.bodyMedium, { color: theme.textPrimary }]}>
-                    {Strings.transactionForm.noWalletsWarning}
+                  <Text style={[Typography.bodyMedium, { color: theme.textPrimary, textAlign: isRTL ? 'right' : 'left' }]}>
+                    {strings.transactionForm.noWalletsWarning}
                   </Text>
                 </View>
                 <TouchableOpacity
-                  onPress={() => router.push('/wallets' as any)}
-                  style={[styles.smallActionBtn, { backgroundColor: theme.primary }]}
+                  activeOpacity={0.8}
+                  onPress={() => router.push('/(app)/wallets')}
+                  style={[styles.smallActionBtn, { backgroundColor: theme.surface }]}
                 >
-                  <Text style={[Typography.caption, { color: theme.textInverse, fontWeight: '700' }]}>
-                    {Strings.transactionForm.goToAddWallet}
+                  <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700' }]}>
+                    {strings.transactionForm.goToAddWallet}
                   </Text>
                 </TouchableOpacity>
               </View>
             ) : wallets.length > 1 ? (
               <View style={styles.sectionContainer}>
-                <View style={styles.sectionHeaderRow}>
+                <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                   <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
-                    {Strings.transactionForm.walletLabel}
+                    {strings.transactionForm.walletLabel}
                   </Text>
                   {walletError && (
                     <Text style={[Typography.caption, { color: theme.expense }]}>
@@ -476,7 +474,7 @@ export default function TransactionFormModal() {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipsScroll}
+                  contentContainerStyle={[styles.chipsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
                 >
                   {wallets.map((wallet) => {
                     const isSelected = selectedWalletId === wallet.id;
@@ -544,9 +542,9 @@ export default function TransactionFormModal() {
 
             {/* CATEGORY PICKER (Filtered to active type) */}
             <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
-                  {Strings.transactionForm.categoryLabel}
+                  {strings.transactionForm.categoryLabel}
                 </Text>
                 {categoryError && (
                   <Text style={[Typography.caption, { color: theme.expense }]}>
@@ -558,7 +556,7 @@ export default function TransactionFormModal() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.chipsScroll}
+                contentContainerStyle={[styles.chipsScroll, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}
               >
                 {/* Optional "بدون فئة" (Uncategorized) chip */}
                 <TouchableOpacity
@@ -575,6 +573,7 @@ export default function TransactionFormModal() {
                         selectedCategoryId === null ? accentBg : theme.surface,
                       borderColor:
                         selectedCategoryId === null ? accentColor : theme.border,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                 >
@@ -598,7 +597,7 @@ export default function TransactionFormModal() {
                       },
                     ]}
                   >
-                    {Strings.transactionForm.uncategorized}
+                    {strings.transactionForm.uncategorized}
                   </Text>
                 </TouchableOpacity>
 
@@ -647,14 +646,14 @@ export default function TransactionFormModal() {
 
             {/* DATE PICKER */}
             <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
-                  {Strings.transactionForm.dateLabel}
+                  {strings.transactionForm.dateLabel}
                 </Text>
               </View>
 
               {/* Quick Selectors + Custom Date Action */}
-              <View style={styles.dateSelectorRow}>
+              <View style={[styles.dateSelectorRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 {/* Today */}
                 <TouchableOpacity
                   activeOpacity={0.75}
@@ -682,7 +681,7 @@ export default function TransactionFormModal() {
                       },
                     ]}
                   >
-                    {Strings.transactionForm.today}
+                    {strings.transactionForm.today}
                   </Text>
                 </TouchableOpacity>
 
@@ -714,7 +713,7 @@ export default function TransactionFormModal() {
                       },
                     ]}
                   >
-                    {Strings.transactionForm.yesterday}
+                    {strings.transactionForm.yesterday}
                   </Text>
                 </TouchableOpacity>
 
@@ -737,6 +736,7 @@ export default function TransactionFormModal() {
                         transactionDate !== yesterdayISO
                           ? accentColor
                           : theme.border,
+                      flexDirection: isRTL ? 'row-reverse' : 'row',
                     },
                   ]}
                 >
@@ -768,7 +768,7 @@ export default function TransactionFormModal() {
                       },
                     ]}
                   >
-                    {formatDateDisplay(transactionDate)}
+                    {formatDateDisplay(transactionDate, language)}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -776,9 +776,9 @@ export default function TransactionFormModal() {
 
             {/* NOTE INPUT */}
             <View style={styles.sectionContainer}>
-              <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionHeaderRow, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                 <Text style={[Typography.subhead, styles.sectionTitle, { color: theme.textPrimary }]}>
-                  {Strings.transactionForm.noteLabel}
+                  {strings.transactionForm.noteLabel}
                 </Text>
                 <Text style={[Typography.caption, { color: theme.textTertiary }]}>
                   {note.length}/500
@@ -798,7 +798,7 @@ export default function TransactionFormModal() {
                   value={note}
                   editable={!submitting}
                   onChangeText={setNote}
-                  placeholder={Strings.transactionForm.notePlaceholder}
+                  placeholder={strings.transactionForm.notePlaceholder}
                   placeholderTextColor={theme.textTertiary}
                   multiline
                   maxLength={500}
@@ -807,7 +807,7 @@ export default function TransactionFormModal() {
                     styles.noteInput,
                     {
                       color: theme.textPrimary,
-                      textAlign: I18nManager.isRTL ? 'right' : 'left',
+                      textAlign: isRTL ? 'right' : 'left',
                     },
                   ]}
                 />
@@ -832,17 +832,17 @@ export default function TransactionFormModal() {
                 {submitting ? (
                   <ActivityIndicator color={theme.textInverse} size="small" />
                 ) : (
-                  <View style={styles.submitBtnContent}>
+                  <View style={[styles.submitBtnContent, { flexDirection: isRTL ? 'row-reverse' : 'row' }]}>
                     <Ionicons
                       name={isEditing ? 'checkmark-circle' : 'add-circle'}
                       size={20}
                       color={theme.textInverse}
-                      style={{ marginRight: Spacing.xs }}
+                      style={{ marginHorizontal: Spacing.xs }}
                     />
                     <Text style={[Typography.headline, { color: theme.textInverse, fontWeight: '700' }]}>
                       {isEditing
-                        ? Strings.transactionForm.saveChanges
-                        : Strings.transactionForm.saveTransaction}
+                        ? strings.transactionForm.saveChanges
+                        : strings.transactionForm.saveTransaction}
                     </Text>
                   </View>
                 )}
