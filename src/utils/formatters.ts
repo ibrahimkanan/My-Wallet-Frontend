@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Strings } from '../constants/strings';
 
 /**
@@ -128,6 +129,50 @@ export function formatTransactionGroupDate(dateStr: string): string {
     return `${dayOfWeek}، ${day} ${monthName} ${year}`;
   } catch {
     return dateStr;
+  }
+}
+
+/**
+ * Formats a transaction date into a relative label (اليوم / أمس / YYYY/MM/DD).
+ */
+export function formatRelativeDate(dateStr: string): string {
+  if (!dateStr) return '';
+  try {
+    const txDate = new Date(dateStr);
+    const now = new Date();
+    const isToday =
+      txDate.getFullYear() === now.getFullYear() &&
+      txDate.getMonth() === now.getMonth() &&
+      txDate.getDate() === now.getDate();
+
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      txDate.getFullYear() === yesterday.getFullYear() &&
+      txDate.getMonth() === yesterday.getMonth() &&
+      txDate.getDate() === yesterday.getDate();
+
+    if (isToday) return Strings.home.todayLabel;
+    if (isYesterday) return Strings.home.yesterdayLabel;
+
+    return `${txDate.getFullYear()}/${txDate.getMonth() + 1}/${txDate.getDate()}`;
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
+ * Returns standard Ionicons icon name for a wallet type.
+ */
+export function getWalletIcon(type?: string): keyof typeof Ionicons.glyphMap {
+  switch (type) {
+    case 'bank':
+      return 'business-outline';
+    case 'card':
+      return 'card-outline';
+    case 'cash':
+    default:
+      return 'cash-outline';
   }
 }
 

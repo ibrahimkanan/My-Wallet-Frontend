@@ -1,23 +1,29 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemeColors, Typography, Spacing, Radii, BrandColors } from '../../constants/theme';
+import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Transaction } from '../../types/models';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatRelativeDate } from '../../utils/formatters';
 
-interface TransactionItemProps {
+export interface TransactionItemProps {
   transaction: Transaction;
   categoryName?: string | null;
+  categoryIcon?: string | null;
   walletName?: string | null;
+  showDate?: boolean;
   onPress?: () => void;
+  onDelete?: () => void;
 }
 
 export function TransactionItem({
   transaction,
   categoryName,
+  categoryIcon,
   walletName,
+  showDate = true,
   onPress,
+  onDelete,
 }: TransactionItemProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
@@ -26,41 +32,19 @@ export function TransactionItem({
   const amountColor = isIncome ? theme.income : theme.expense;
   const sign = isIncome ? '+' : '-';
 
-  // Format date relative or localized
-  const formatTxDate = (dateStr: string): string => {
-    if (!dateStr) return '';
-    try {
-      const txDate = new Date(dateStr);
-      const now = new Date();
-      const isToday =
-        txDate.getFullYear() === now.getFullYear() &&
-        txDate.getMonth() === now.getMonth() &&
-        txDate.getDate() === now.getDate();
-
-      const yesterday = new Date();
-      yesterday.setDate(now.getDate() - 1);
-      const isYesterday =
-        txDate.getFullYear() === yesterday.getFullYear() &&
-        txDate.getMonth() === yesterday.getMonth() &&
-        txDate.getDate() === yesterday.getDate();
-
-      if (isToday) return Strings.home.todayLabel;
-      if (isYesterday) return Strings.home.yesterdayLabel;
-
-      return `${txDate.getFullYear()}/${txDate.getMonth() + 1}/${txDate.getDate()}`;
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const displayName =
-    categoryName || transaction.note || Strings.home.generalCategory;
+  const displayName = categoryName || transaction.note || Strings.home.generalCategory;
   const displayWallet = walletName || Strings.home.walletDefault;
-  const dateFormatted = formatTxDate(transaction.transaction_date);
+  const dateFormatted = formatRelativeDate(transaction.transaction_date);
+
+  const resolvedIcon = categoryIcon
+    ? (categoryIcon as any)
+    : isIncome
+    ? 'arrow-down'
+    : 'arrow-up';
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.75}
       onPress={onPress}
       style={[
         styles.container,
@@ -68,27 +52,22 @@ export function TransactionItem({
           backgroundColor: theme.surface,
           borderColor: theme.border,
         },
+        Shadows.subtle,
       ]}
     >
-      {/* Icon */}
+      {/* Category Icon Badge */}
       <View
         style={[
           styles.iconWrapper,
           {
-            backgroundColor: isIncome
-              ? `${theme.income}18`
-              : `${theme.expense}18`,
+            backgroundColor: isIncome ? `${theme.income}18` : `${theme.expense}18`,
           },
         ]}
       >
-        <Ionicons
-          name={isIncome ? 'arrow-down' : 'arrow-up'}
-          size={18}
-          color={amountColor}
-        />
+        <Ionicons name={resolvedIcon} size={18} color={amountColor} />
       </View>
 
-      {/* Details */}
+      {/* Info Column */}
       <View style={styles.detailsCol}>
         <Text
           style={[Typography.bodyMedium, styles.titleText, { color: theme.textPrimary }]}
@@ -96,21 +75,38 @@ export function TransactionItem({
         >
           {displayName}
         </Text>
-        <View style={styles.subMetaRow}>
+
+        {transaction.note && categoryName ? (
           <Text
-            style={[Typography.caption, { color: theme.textTertiary }]}
+            style={[Typography.caption, styles.noteText, { color: theme.textSecondary }]}
             numberOfLines={1}
           >
+            {transaction.note}
+          </Text>
+        ) : null}
+
+        <View style={styles.subMetaRow}>
+          <Ionicons
+            name="wallet-outline"
+            size={12}
+            color={theme.textTertiary}
+            style={{ marginRight: 3 }}
+          />
+          <Text style={[Typography.caption, { color: theme.textTertiary, fontSize: 11 }]}>
             {displayWallet}
           </Text>
-          <Text style={[Typography.caption, { color: theme.textTertiary }]}> • </Text>
-          <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-            {dateFormatted}
-          </Text>
+          {showDate && dateFormatted ? (
+            <>
+              <Text style={[Typography.caption, { color: theme.textTertiary }]}> • </Text>
+              <Text style={[Typography.caption, { color: theme.textTertiary, fontSize: 11 }]}>
+                {dateFormatted}
+              </Text>
+            </>
+          ) : null}
         </View>
       </View>
 
-      {/* Amount */}
+      {/* Amount & Actions */}
       <View style={styles.amountCol}>
         <Text
           style={[Typography.subhead, styles.amountText, { color: amountColor }]}
@@ -118,6 +114,20 @@ export function TransactionItem({
         >
           {sign} {formatCurrency(Number(transaction.amount))}
         </Text>
+
+        {onDelete ? (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.deleteBtn, { backgroundColor: theme.surfaceSubtle }]}
+          >
+            <Ionicons name="trash-outline" size={14} color={theme.expense} />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -149,6 +159,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
   },
+  noteText: {
+    marginBottom: 2,
+    fontSize: 12,
+  },
   subMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -157,8 +171,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
     paddingLeft: Spacing.sm,
+    gap: 4,
   },
   amountText: {
     fontWeight: '700',
+  },
+  deleteBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: Radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
   },
 });

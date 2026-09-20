@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemeColors, Typography, Spacing, Radii, Shadows, BrandColors } from '../../constants/theme';
+import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { Wallet } from '../../types/models';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, getWalletIcon } from '../../utils/formatters';
 
 interface WalletCardProps {
   wallet: Wallet;
@@ -14,18 +14,6 @@ interface WalletCardProps {
 export function WalletCard({ wallet, onPress }: WalletCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
-
-  const getWalletIcon = (type: Wallet['type']): keyof typeof Ionicons.glyphMap => {
-    switch (type) {
-      case 'bank':
-        return 'business-outline';
-      case 'card':
-        return 'card-outline';
-      case 'cash':
-      default:
-        return 'cash-outline';
-    }
-  };
 
   const getWalletTypeLabel = (type: Wallet['type']): string => {
     return Strings.dashboard.accountTypeSuffix(type);

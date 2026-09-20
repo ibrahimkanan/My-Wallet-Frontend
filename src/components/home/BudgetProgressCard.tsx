@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ThemeColors, Typography, Spacing, Radii, Shadows, BrandColors } from '../../constants/theme';
+import { ThemeColors, Typography, Spacing, Radii, Shadows } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
 import { formatCurrency } from '../../utils/formatters';
+import { ProgressBar } from '../ui/ProgressBar';
 
 interface BudgetProgressCardProps {
   budgeted: number;
@@ -120,17 +121,12 @@ export function BudgetProgressCard({
           )}
 
           {/* Progress Bar */}
-          <View style={[styles.progressTrack, { backgroundColor: theme.borderSubtle }]}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${clampedProgress * 100}%`,
-                  backgroundColor: progressColor,
-                },
-              ]}
-            />
-          </View>
+          <ProgressBar
+            progress={clampedProgress}
+            color={progressColor}
+            height={8}
+            style={{ marginBottom: Spacing.md }}
+          />
 
           {/* Stats 3-column breakdown */}
           <View style={styles.statsRow}>

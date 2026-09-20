@@ -60,7 +60,7 @@ export interface Budget {
 }
 
 export interface BudgetSummaryItem {
-  budget_id: string;
+  budget_id: string | null;
   category_id: string | null;
   budgeted: number;
   spent: number;
