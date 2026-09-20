@@ -19,7 +19,6 @@ import {
   Spacing,
   Radii,
   Shadows,
-  BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
 import { useAuthStore } from '../../../store/authStore';
@@ -43,8 +42,9 @@ import {
   TransactionItem,
   EmptyState,
   FloatingActionButton,
-} from '../../../components/home';
-import { ErrorBanner } from '../../../components/ui';
+  ErrorBanner,
+  LoadingView,
+} from '../../../components';
 import { getErrorMessage } from '../../../utils/errors';
 
 export default function HomeScreen() {
@@ -182,12 +182,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.sm }]}>
-            {Strings.common.loading}
-          </Text>
-        </View>
+        <LoadingView />
       ) : (
         <View style={styles.container}>
           <ScrollView
@@ -383,20 +378,21 @@ export default function HomeScreen() {
             ) : (
               <View style={styles.transactionsList}>
                 {transactions.map((tx) => {
-                  const cat = tx.category_id ? categoryMap.get(tx.category_id) : undefined;
-                  const wallet = walletMap.get(tx.wallet_id);
+                  const matchedCat = tx.category_id ? categoryMap.get(tx.category_id) : undefined;
+                  const matchedWallet = walletMap.get(tx.wallet_id);
 
                   return (
                     <TransactionItem
                       key={tx.id}
                       transaction={tx}
-                      categoryName={cat?.name}
-                      walletName={wallet?.name}
+                      categoryName={matchedCat?.name}
+                      categoryIcon={matchedCat?.icon}
+                      walletName={matchedWallet?.name}
                       onPress={() =>
                         router.push({
                           pathname: '/transaction/new',
                           params: { id: tx.id, initialData: JSON.stringify(tx) },
-                        } as any)
+                        })
                       }
                     />
                   );

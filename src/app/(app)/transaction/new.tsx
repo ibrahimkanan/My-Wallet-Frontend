@@ -21,10 +21,9 @@ import {
   Spacing,
   Radii,
   Shadows,
-  BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
-import { Button, ErrorBanner, DatePickerModal } from '../../../components/ui';
+import { Button, ErrorBanner, DatePickerModal, LoadingView } from '../../../components';
 import api from '../../../services/api';
 import { Wallet, Category, Transaction, TransactionType } from '../../../types/models';
 import {
@@ -37,6 +36,7 @@ import {
   formatDateToISO,
   formatDateDisplay,
   formatTransactionGroupDate,
+  getWalletIcon,
 } from '../../../utils/formatters';
 
 export default function TransactionFormModal() {
@@ -261,18 +261,6 @@ export default function TransactionFormModal() {
     }
   };
 
-  // Helper icon for wallet types
-  const getWalletIcon = (wType: string): keyof typeof Ionicons.glyphMap => {
-    switch (wType) {
-      case 'cash':
-        return 'cash-outline';
-      case 'card':
-        return 'card-outline';
-      default:
-        return 'business-outline';
-    }
-  };
-
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
@@ -300,14 +288,7 @@ export default function TransactionFormModal() {
         </View>
 
         {loadingInitial ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <Text
-              style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.sm }]}
-            >
-              {Strings.common.loading}
-            </Text>
-          </View>
+          <LoadingView />
         ) : (
           <ScrollView
             contentContainerStyle={styles.scrollContent}

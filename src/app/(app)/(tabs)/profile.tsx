@@ -6,8 +6,6 @@ import {
   useColorScheme,
   I18nManager,
   ScrollView,
-  TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,7 +20,7 @@ import {
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
 import { useAuthStore } from '../../../store/authStore';
-import { Button } from '../../../components/ui';
+import { Button, SettingRow } from '../../../components';
 import api from '../../../services/api';
 import { getRefreshToken } from '../../../services/tokens';
 import { formatCurrency } from '../../../utils/formatters';
@@ -114,65 +112,25 @@ export default function ProfileScreen() {
           </Text>
         </View>
 
-        {/* Manage Wallets Button Row */}
-        <TouchableOpacity
-          activeOpacity={0.7}
+        {/* Manage Wallets Row */}
+        <SettingRow
+          title={Strings.settings.manageWallets}
+          subtitle={Strings.settings.manageWalletsDesc}
+          icon="wallet-outline"
+          iconColor={theme.primary}
+          iconBg={theme.primaryMuted}
           onPress={() => router.push('/wallets' as any)}
-          style={[
-            styles.navCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-            Shadows.card,
-          ]}
-        >
-          <View style={styles.navCardLeft}>
-            <View style={[styles.navIconBox, { backgroundColor: theme.primaryMuted }]}>
-              <Ionicons name="wallet-outline" size={22} color={theme.primary} />
-            </View>
-            <View style={styles.navTextCol}>
-              <Text style={[Typography.subhead, styles.navTitle, { color: theme.textPrimary }]}>
-                {Strings.settings.manageWallets}
-              </Text>
-              <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                {Strings.settings.manageWalletsDesc}
-              </Text>
-            </View>
-          </View>
-          <Ionicons
-            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
-            size={20}
-            color={theme.textTertiary}
-          />
-        </TouchableOpacity>
+        />
 
-        {/* Manage Categories Button Row */}
-        <TouchableOpacity
-          activeOpacity={0.7}
+        {/* Manage Categories Row */}
+        <SettingRow
+          title={Strings.settings.manageCategories}
+          subtitle={Strings.settings.manageCategoriesDesc}
+          icon="pricetags-outline"
+          iconColor={BrandColors.jade500}
+          iconBg={`${BrandColors.jade500}15`}
           onPress={() => router.push('/categories' as any)}
-          style={[
-            styles.navCard,
-            { backgroundColor: theme.surface, borderColor: theme.border },
-            Shadows.card,
-          ]}
-        >
-          <View style={styles.navCardLeft}>
-            <View style={[styles.navIconBox, { backgroundColor: `${BrandColors.jade500}15` }]}>
-              <Ionicons name="pricetags-outline" size={22} color={BrandColors.jade500} />
-            </View>
-            <View style={styles.navTextCol}>
-              <Text style={[Typography.subhead, styles.navTitle, { color: theme.textPrimary }]}>
-                {Strings.settings.manageCategories}
-              </Text>
-              <Text style={[Typography.caption, { color: theme.textSecondary }]}>
-                {Strings.settings.manageCategoriesDesc}
-              </Text>
-            </View>
-          </View>
-          <Ionicons
-            name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'}
-            size={20}
-            color={theme.textTertiary}
-          />
-        </TouchableOpacity>
+        />
 
         {/* Sign Out Action */}
         <View style={styles.logoutWrapper}>
@@ -236,36 +194,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: '700',
-  },
-  navCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: Radii.xl,
-    borderWidth: 1,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  navCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    flex: 1,
-    paddingEnd: Spacing.sm,
-  },
-  navIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: Radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navTextCol: {
-    flex: 1,
-  },
-  navTitle: {
-    fontWeight: '700',
-    marginBottom: 2,
   },
   logoutWrapper: {
     marginTop: Spacing.lg,

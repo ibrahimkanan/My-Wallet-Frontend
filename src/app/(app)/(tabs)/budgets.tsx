@@ -6,11 +6,6 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
   useColorScheme,
   I18nManager,
 } from 'react-native';
@@ -23,11 +18,19 @@ import {
   Spacing,
   Radii,
   Shadows,
-  BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
-import { Button, ErrorBanner, MonthYearSelector } from '../../../components/ui';
-import { EmptyState } from '../../../components/home';
+import {
+  Button,
+  ErrorBanner,
+  MonthYearSelector,
+  LoadingView,
+  ConfirmModal,
+  ProgressBar,
+  EmptyState,
+  CategoryBudgetCard,
+  BudgetFormModal,
+} from '../../../components';
 import api from '../../../services/api';
 import { BudgetSummaryItem, Category } from '../../../types/models';
 import {
@@ -40,31 +43,27 @@ export default function BudgetsScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
 
-  // Selected Month & Year
+  // Selected Month/Year Period
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Data States
+  // Summary & Categories Data
   const [summaryItems, setSummaryItems] = useState<BudgetSummaryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
 
-  // Add Category Budget Modal State
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [addCategoryId, setAddCategoryId] = useState<string | null>(null);
-  const [addAmountStr, setAddAmountStr] = useState('');
-  const [addError, setAddError] = useState<string | null>(null);
-  const [addSubmitting, setAddSubmitting] = useState(false);
-
-  // Edit / Delete Modal State
+  // Add / Edit Modal State
+  const [isFormModalVisible, setIsFormModalVisible] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [editingItem, setEditingItem] = useState<BudgetSummaryItem | null>(null);
-  const [editAmountStr, setEditAmountStr] = useState('');
-  const [editError, setEditError] = useState<string | null>(null);
-  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [formCategoryId, setFormCategoryId] = useState<string | null>(null);
+  const [formAmountStr, setFormAmountStr] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Delete Confirmation Modal State
+  // Delete Confirmation State
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<BudgetSummaryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -111,7 +110,7 @@ export default function BudgetsScreen() {
     fetchBudgetsData(true);
   };
 
-  // Separate Overall Budget (category_id: null) vs Category Budgets
+  // Separate Overall Budget vs Category Budgets
   const overallBudget = useMemo(
     () => summaryItems.find((b) => b.category_id === null) || null,
     [summaryItems]
@@ -136,176 +135,165 @@ export default function BudgetsScreen() {
     [categories, budgetedCategoryIds]
   );
 
-  // Handlers for Adding Budget
+  // Handlers for Add Modal
   const openAddModal = () => {
-    setAddCategoryId(availableExpenseCategories[0]?.id || null);
-    setAddAmountStr('');
-    setAddError(null);
-    setIsAddModalVisible(true);
+    setFormMode('add');
+    setEditingItem(null);
+    setFormAmountStr('');
+    setFormError(null);
+    setFormCategoryId(availableExpenseCategories[0]?.id || null);
+    setIsFormModalVisible(true);
   };
 
-  const handleCreateBudget = async () => {
-    if (!addCategoryId) {
-      setAddError(Strings.budgets.categoryRequired);
-      return;
-    }
-    const amountNum = parseFloat(addAmountStr);
-    if (!addAmountStr.trim() || isNaN(amountNum) || amountNum <= 0) {
-      setAddError(Strings.budgets.amountRequired);
-      return;
-    }
-
-    setAddSubmitting(true);
-    setAddError(null);
-
-    try {
-      await api.post('/budgets', {
-        category_id: addCategoryId,
-        amount: amountNum,
-        month: selectedMonth,
-        year: selectedYear,
-      });
-
-      setIsAddModalVisible(false);
-      fetchBudgetsData(true);
-    } catch (err: any) {
-      console.warn('[Budgets] Create budget error:', err);
-      if (err.response?.data?.error) {
-        setAddError(err.response.data.error);
-      } else {
-        setAddError('تعذر إضافة الميزانية');
-      }
-    } finally {
-      setAddSubmitting(false);
-    }
-  };
-
-  // Handlers for Editing Budget
+  // Handlers for Edit Modal
   const openEditModal = (item: BudgetSummaryItem) => {
+    setFormMode('edit');
     setEditingItem(item);
-    setEditAmountStr(String(item.budgeted));
-    setEditError(null);
+    setFormAmountStr(String(item.budgeted));
+    setFormError(null);
+    setFormCategoryId(item.category_id);
+    setIsFormModalVisible(true);
   };
 
-  const handleUpdateBudget = async () => {
-    if (!editingItem) return;
-    const amountNum = parseFloat(editAmountStr);
-    if (!editAmountStr.trim() || isNaN(amountNum) || amountNum <= 0) {
-      setEditError(Strings.budgets.amountRequired);
+  // Save (Create or Update) Budget
+  const handleSaveBudget = async () => {
+    const numericAmount = parseFloat(formAmountStr);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      setFormError(Strings.budgets.amountRequired);
       return;
     }
 
-    setEditSubmitting(true);
-    setEditError(null);
+    if (formMode === 'add') {
+      if (!formCategoryId) {
+        setFormError('يرجى اختيار فئة');
+        return;
+      }
+      try {
+        setSubmitting(true);
+        setFormError(null);
+        await api.post('/budgets', {
+          category_id: formCategoryId,
+          amount: numericAmount,
+          month: selectedMonth,
+          year: selectedYear,
+        });
+        setIsFormModalVisible(false);
+        fetchBudgetsData(true);
+      } catch (err: any) {
+        console.warn('[Budgets] Create budget error:', err);
+        setFormError(err.response?.data?.error || 'فشل إنشاء ميزانية الفئة');
+      } finally {
+        setSubmitting(false);
+      }
+    } else if (formMode === 'edit' && editingItem) {
+      try {
+        setSubmitting(true);
+        setFormError(null);
 
-    try {
-      await api.patch(`/budgets/${editingItem.budget_id}`, {
-        amount: amountNum,
-      });
+        if (editingItem.budget_id) {
+          await api.patch(`/budgets/${editingItem.budget_id}`, {
+            amount: numericAmount,
+          });
+        } else {
+          // If editing an auto-generated overall budget that wasn't persisted yet
+          await api.post('/budgets', {
+            category_id: editingItem.category_id,
+            amount: numericAmount,
+            month: selectedMonth,
+            year: selectedYear,
+          });
+        }
 
-      setEditingItem(null);
-      fetchBudgetsData(true);
-    } catch (err: any) {
-      console.warn('[Budgets] Update budget error:', err);
-      setEditError(err.response?.data?.error || 'تعذر تحديث الميزانية');
-    } finally {
-      setEditSubmitting(false);
+        setIsFormModalVisible(false);
+        fetchBudgetsData(true);
+      } catch (err: any) {
+        console.warn('[Budgets] Update budget error:', err);
+        setFormError(err.response?.data?.error || 'فشل تحديث الميزانية');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
-  // Handlers for Deleting Budget
-  const handleDeleteBudget = async () => {
-    if (!deleteConfirmItem) return;
-    setDeleting(true);
-
+  // Delete Budget
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmItem || !deleteConfirmItem.budget_id) return;
     try {
+      setDeleting(true);
       await api.delete(`/budgets/${deleteConfirmItem.budget_id}`);
       setDeleteConfirmItem(null);
-      setEditingItem(null);
+      setIsFormModalVisible(false);
       fetchBudgetsData(true);
     } catch (err: any) {
       console.warn('[Budgets] Delete budget error:', err);
-      setGeneralError(err.response?.data?.error || 'تعذر حذف الميزانية');
     } finally {
       setDeleting(false);
     }
   };
 
-  // Color & Status Helper for Budget Progress
+  // Helper for budget status calculations
   const getBudgetStatus = (budgeted: number, spent: number) => {
-    if (budgeted <= 0) {
-      return {
-        ratio: 0,
-        percentage: 0,
-        color: theme.income,
-        bg: theme.incomeBg,
-        statusText: Strings.budgets.statusFine,
-        isOver: false,
-      };
-    }
-    const ratio = spent / budgeted;
+    const ratio = budgeted > 0 ? spent / budgeted : 0;
     const percentage = Math.round(ratio * 100);
     const isOver = spent > budgeted;
 
-    let color: string = theme.income;
-    let bg: string = theme.incomeBg;
-    let statusText: string = Strings.budgets.statusFine;
+    let color = theme.income;
+    let label: string = Strings.budgets.statusFine;
 
     if (isOver) {
       color = theme.expense;
-      bg = theme.expenseBg;
-      statusText = Strings.budgets.statusOver;
-    } else if (ratio >= 0.8) {
+      label = Strings.budgets.statusOver;
+    } else if (percentage >= 80) {
       color = theme.warning;
-      bg = theme.warningBg;
-      statusText = Strings.budgets.statusWarning;
+      label = Strings.budgets.statusWarning;
     }
 
-    return { ratio, percentage, color, bg, statusText, isOver };
+    return { ratio, percentage, isOver, color, label };
   };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-      {/* Header Bar */}
+      {/* Top Header Bar */}
       <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
-        <Text
-          style={[
-            Typography.title1,
-            styles.screenTitle,
-            { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
-          ]}
-        >
-          {Strings.budgets.title}
-        </Text>
+        <View>
+          <Text
+            style={[
+              Typography.title1,
+              styles.screenTitle,
+              { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
+            ]}
+          >
+            {Strings.budgets.title}
+          </Text>
+          <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+            {Strings.budgets.subtitle}
+          </Text>
+        </View>
 
+        {/* Add Category Budget Action */}
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={openAddModal}
-          style={[styles.headerAddBtn, { backgroundColor: theme.primary }]}
+          style={[styles.addHeaderBtn, { backgroundColor: theme.primary }]}
         >
-          <Ionicons name="add" size={20} color={theme.textInverse} />
-          <Text style={[Typography.caption, { color: theme.textInverse, fontWeight: '700', marginLeft: 4 }]}>
+          <Ionicons name="add" size={18} color="#FFFFFF" />
+          <Text style={[Typography.caption, styles.addBtnText, { color: '#FFFFFF' }]}>
             {Strings.budgets.addCategoryBudget}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Month/Year Navigation Selector */}
+      {/* Month/Year Selector */}
       <MonthYearSelector
         month={selectedMonth}
         year={selectedYear}
-        mode="month"
         onChangeMonth={setSelectedMonth}
         onChangeYear={setSelectedYear}
       />
 
+      {/* Main Content */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.sm }]}>
-            {Strings.common.loading}
-          </Text>
-        </View>
+        <LoadingView />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -319,17 +307,10 @@ export default function BudgetsScreen() {
           }
         >
           {generalError && (
-            <View style={{ marginBottom: Spacing.md, gap: Spacing.xs }}>
-              <ErrorBanner
-                message={generalError}
-                onDismiss={() => setGeneralError(null)}
-              />
+            <View style={{ marginBottom: Spacing.md }}>
+              <ErrorBanner message={generalError} onDismiss={() => setGeneralError(null)} />
               <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                  setLoading(true);
-                  fetchBudgetsData();
-                }}
+                onPress={() => fetchBudgetsData(false)}
                 style={[styles.retryBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
               >
                 <Ionicons name="refresh-outline" size={16} color={theme.primary} />
@@ -340,160 +321,132 @@ export default function BudgetsScreen() {
             </View>
           )}
 
-          {/* PRIMARY HERO: Overall Budget Card */}
-          {!overallBudget && (
-            <View
-              style={[
-                styles.heroCard,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                  borderStyle: 'dashed',
-                  marginBottom: Spacing.lg,
-                },
-                Shadows.card,
-              ]}
-            >
-              <View style={styles.heroHeaderRow}>
-                <View style={styles.heroTitleCol}>
-                  <View style={styles.heroBadgeRow}>
-                    <View style={[styles.heroIconBadge, { backgroundColor: theme.surfaceSubtle }]}>
-                      <Ionicons name="pie-chart-outline" size={18} color={theme.textTertiary} />
-                    </View>
-                    <Text style={[Typography.title3, styles.heroTitle, { color: theme.textPrimary }]}>
-                      {Strings.budgets.overallBudget}
-                    </Text>
-                  </View>
-                  <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.xs }]}>
-                    {Strings.budgets.deleteOverallNote}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
+          {/* OVERALL BUDGET HERO CARD */}
+          {overallBudget ? (
+            (() => {
+              const status = getBudgetStatus(overallBudget.budgeted, overallBudget.spent);
+              const clampedProgress = Math.min(Math.max(status.ratio, 0), 1);
 
-          {overallBudget && (() => {
-            const status = getBudgetStatus(overallBudget.budgeted, overallBudget.spent);
-            const clampedProgress = Math.min(Math.max(status.ratio, 0), 1);
-
-            return (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => openEditModal(overallBudget)}
-                style={[
-                  styles.heroCard,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: status.isOver ? theme.expense : theme.border,
-                  },
-                  Shadows.card,
-                ]}
-              >
-                {/* Hero Header */}
-                <View style={styles.heroHeaderRow}>
-                  <View style={styles.heroTitleCol}>
-                    <View style={styles.heroBadgeRow}>
-                      <View style={[styles.heroIconBadge, { backgroundColor: theme.primaryMuted }]}>
-                        <Ionicons name="pie-chart" size={18} color={theme.primary} />
-                      </View>
-                      <Text style={[Typography.title3, styles.heroTitle, { color: theme.textPrimary }]}>
-                        {Strings.budgets.overallBudgetTitle}
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => openEditModal(overallBudget)}
+                  style={[
+                    styles.heroCard,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: status.isOver ? theme.expense : theme.border,
+                    },
+                    Shadows.elevated,
+                  ]}
+                >
+                  <View style={styles.heroTopRow}>
+                    <View style={styles.heroTitleCol}>
+                      <Text style={[Typography.headline, { color: theme.textPrimary }]}>
+                        {Strings.budgets.overallBudget}
+                      </Text>
+                      <Text style={[Typography.caption, { color: theme.textSecondary }]}>
+                        {Strings.budgets.overallBudgetSubtitle}
                       </Text>
                     </View>
-                    <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: 2 }]}>
-                      {Strings.budgets.overallBudgetSubtitle}
-                    </Text>
+
+                    <View style={[styles.statusBadge, { backgroundColor: `${status.color}15` }]}>
+                      <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+                      <Text style={[Typography.caption, { color: status.color, fontWeight: '700' }]}>
+                        {status.label} ({status.percentage}%)
+                      </Text>
+                    </View>
                   </View>
 
-                  {/* Status & Percent Badge */}
-                  <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                    <Text style={[Typography.caption, { color: status.color, fontWeight: '700' }]}>
-                      {status.statusText} • {status.percentage}%
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Over Budget Alert Notice */}
-                {status.isOver && (
-                  <View style={[styles.warningBanner, { backgroundColor: `${theme.expense}15` }]}>
-                    <Ionicons name="alert-circle" size={16} color={theme.expense} />
-                    <Text style={[Typography.caption, { color: theme.expense, fontWeight: '600', marginLeft: 4 }]}>
-                      {Strings.budgets.overBudgetBy(
-                        formatCurrency(overallBudget.spent - overallBudget.budgeted)
-                      )}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Big Progress Bar */}
-                <View style={[styles.heroProgressTrack, { backgroundColor: theme.surfaceSubtle }]}>
-                  <View
-                    style={[
-                      styles.heroProgressFill,
-                      {
-                        width: `${clampedProgress * 100}%`,
-                        backgroundColor: status.color,
-                      },
-                    ]}
+                  {/* Progress Bar */}
+                  <ProgressBar
+                    progress={clampedProgress}
+                    color={status.color}
+                    height={10}
+                    style={{ marginVertical: Spacing.md }}
                   />
-                </View>
 
-                {/* 3-Column Stats Breakdown */}
-                <View style={styles.statsRow}>
-                  {/* Budgeted */}
-                  <View style={styles.statCol}>
-                    <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                      {Strings.budgets.budgeted}
-                    </Text>
-                    <Text style={[Typography.subhead, styles.statValue, { color: theme.textPrimary }]}>
-                      {formatCurrency(overallBudget.budgeted)}
-                    </Text>
+                  {/* 3-column stats */}
+                  <View style={styles.statsRow}>
+                    <View style={styles.statCol}>
+                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
+                        {Strings.budgets.budgeted}
+                      </Text>
+                      <Text style={[Typography.subhead, styles.statValue, { color: theme.textPrimary }]}>
+                        {formatCurrency(overallBudget.budgeted)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statCol}>
+                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
+                        {Strings.budgets.spent}
+                      </Text>
+                      <Text
+                        style={[
+                          Typography.subhead,
+                          styles.statValue,
+                          { color: status.isOver ? theme.expense : theme.textPrimary },
+                        ]}
+                      >
+                        {formatCurrency(overallBudget.spent)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statCol}>
+                      <Text style={[Typography.caption, { color: theme.textTertiary }]}>
+                        {Strings.budgets.remaining}
+                      </Text>
+                      <Text
+                        style={[
+                          Typography.subhead,
+                          styles.statValue,
+                          {
+                            color: overallBudget.remaining >= 0 ? theme.income : theme.expense,
+                          },
+                        ]}
+                      >
+                        {formatCurrency(overallBudget.remaining)}
+                      </Text>
+                    </View>
                   </View>
 
-                  {/* Spent */}
-                  <View style={styles.statCol}>
+                  <View style={[styles.editHintRow, { borderTopColor: theme.borderSubtle }]}>
                     <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                      {Strings.budgets.spent}
+                      اضغط لتعديل سقف الميزانية العامة
                     </Text>
-                    <Text
-                      style={[
-                        Typography.subhead,
-                        styles.statValue,
-                        { color: status.isOver ? theme.expense : theme.textPrimary },
-                      ]}
-                    >
-                      {formatCurrency(overallBudget.spent)}
-                    </Text>
+                    <Ionicons name="pencil-outline" size={14} color={theme.textTertiary} />
                   </View>
-
-                  {/* Remaining */}
-                  <View style={styles.statCol}>
-                    <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                      {Strings.budgets.remaining}
-                    </Text>
-                    <Text
-                      style={[
-                        Typography.subhead,
-                        styles.statValue,
-                        {
-                          color: overallBudget.remaining >= 0 ? theme.income : theme.expense,
-                        },
-                      ]}
-                    >
-                      {formatCurrency(overallBudget.remaining)}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={[styles.editHintRow, { borderTopColor: theme.borderSubtle }]}>
-                  <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                    اضغط لتعديل سقف الميزانية العامة
-                  </Text>
-                  <Ionicons name="pencil-outline" size={14} color={theme.textTertiary} />
-                </View>
-              </TouchableOpacity>
-            );
-          })()}
+                </TouchableOpacity>
+              );
+            })()
+          ) : (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                setFormMode('edit');
+                setEditingItem({
+                  budget_id: null,
+                  category_id: null,
+                  budgeted: 0,
+                  spent: 0,
+                  remaining: 0,
+                });
+                setFormAmountStr('');
+                setFormError(null);
+                setFormCategoryId(null);
+                setIsFormModalVisible(true);
+              }}
+              style={[styles.emptyOverallCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
+            >
+              <Ionicons name="pie-chart-outline" size={32} color={theme.primary} />
+              <Text style={[Typography.subhead, { color: theme.textPrimary, fontWeight: '700', marginTop: Spacing.xs }]}>
+                {Strings.home.noBudgetSet}
+              </Text>
+              <Text style={[Typography.caption, { color: theme.primary, marginTop: 2, fontWeight: '600' }]}>
+                {Strings.home.setBudgetPrompt}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* CATEGORY BUDGETS SECTION */}
           <View style={styles.sectionHeaderRow}>
@@ -517,75 +470,13 @@ export default function BudgetsScreen() {
             <View style={styles.categoryBudgetsList}>
               {categoryBudgets.map((item) => {
                 const category = item.category_id ? categoryMap.get(item.category_id) : undefined;
-                const catName = category?.name || Strings.transactions.uncategorized;
-                const status = getBudgetStatus(item.budgeted, item.spent);
-                const clampedProgress = Math.min(Math.max(status.ratio, 0), 1);
-
                 return (
-                  <TouchableOpacity
+                  <CategoryBudgetCard
                     key={item.budget_id}
-                    activeOpacity={0.8}
+                    item={item}
+                    category={category}
                     onPress={() => openEditModal(item)}
-                    style={[
-                      styles.categoryCard,
-                      {
-                        backgroundColor: theme.surface,
-                        borderColor: status.isOver ? theme.expense : theme.border,
-                      },
-                      Shadows.subtle,
-                    ]}
-                  >
-                    <View style={styles.catCardTop}>
-                      <View style={styles.catTitleRow}>
-                        <View style={[styles.catIconWrapper, { backgroundColor: `${status.color}15` }]}>
-                          <Ionicons
-                            name={(category?.icon as any) || 'pricetag-outline'}
-                            size={18}
-                            color={status.color}
-                          />
-                        </View>
-                        <View>
-                          <Text style={[Typography.bodyMedium, styles.catName, { color: theme.textPrimary }]}>
-                            {catName}
-                          </Text>
-                          <Text style={[Typography.caption, { color: theme.textTertiary }]}>
-                            {Strings.budgets.spentOf(
-                              formatCurrency(item.spent),
-                              formatCurrency(item.budgeted)
-                            )}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.catRightCol}>
-                        <Text
-                          style={[
-                            Typography.subhead,
-                            styles.catRemainingText,
-                            { color: item.remaining >= 0 ? theme.income : theme.expense },
-                          ]}
-                        >
-                          {formatCurrency(item.remaining)}
-                        </Text>
-                        <Text style={[Typography.caption, { color: theme.textTertiary, fontSize: 11 }]}>
-                          {item.remaining >= 0 ? 'متبقي' : 'عجز'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Progress Bar */}
-                    <View style={[styles.catProgressTrack, { backgroundColor: theme.surfaceSubtle }]}>
-                      <View
-                        style={[
-                          styles.catProgressFill,
-                          {
-                            width: `${clampedProgress * 100}%`,
-                            backgroundColor: status.color,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </TouchableOpacity>
+                  />
                 );
               })}
             </View>
@@ -593,305 +484,51 @@ export default function BudgetsScreen() {
         </ScrollView>
       )}
 
-      {/* ADD CATEGORY BUDGET MODAL */}
-      <Modal
-        visible={isAddModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsAddModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[styles.modalBackdrop, { backgroundColor: theme.modalBackdrop }]}
-        >
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              Shadows.elevated,
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={[Typography.title3, { color: theme.textPrimary, fontWeight: '700' }]}>
-                {Strings.budgets.addCategoryBudget}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsAddModalVisible(false)}
-                style={[styles.modalCloseBtn, { backgroundColor: theme.surfaceSubtle }]}
-              >
-                <Ionicons name="close" size={18} color={theme.textPrimary} />
-              </TouchableOpacity>
-            </View>
+      {/* ADD / EDIT BUDGET MODAL */}
+      <BudgetFormModal
+        visible={isFormModalVisible}
+        mode={formMode}
+        editingItem={editingItem}
+        categoryName={
+          editingItem?.category_id
+            ? categoryMap.get(editingItem.category_id)?.name
+            : undefined
+        }
+        availableCategories={availableExpenseCategories}
+        selectedCategoryId={formCategoryId}
+        onSelectCategory={(id) => setFormCategoryId(id)}
+        amountStr={formAmountStr}
+        onChangeAmount={setFormAmountStr}
+        error={formError}
+        onDismissError={() => setFormError(null)}
+        submitting={submitting}
+        onSubmit={handleSaveBudget}
+        onClose={() => setIsFormModalVisible(false)}
+        onDelete={
+          formMode === 'edit' && editingItem?.budget_id
+            ? () => setDeleteConfirmItem(editingItem)
+            : undefined
+        }
+      />
 
-            {addError && (
-              <View style={{ marginBottom: Spacing.sm }}>
-                <ErrorBanner message={addError} onDismiss={() => setAddError(null)} />
-              </View>
-            )}
-
-            {availableExpenseCategories.length === 0 ? (
-              <View style={styles.noCategoriesBox}>
-                <Ionicons name="checkmark-circle-outline" size={32} color={theme.income} />
-                <Text
-                  style={[
-                    Typography.bodyMedium,
-                    { color: theme.textSecondary, textAlign: 'center', marginTop: Spacing.xs },
-                  ]}
-                >
-                  {Strings.budgets.noAvailableCategories}
-                </Text>
-              </View>
-            ) : (
-              <>
-                {/* Category Picker */}
-                <Text style={[Typography.subhead, styles.inputLabel, { color: theme.textPrimary }]}>
-                  {Strings.budgets.selectCategory}
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.categoryChipsScroll}
-                >
-                  {availableExpenseCategories.map((c) => {
-                    const isSelected = addCategoryId === c.id;
-                    return (
-                      <TouchableOpacity
-                        key={c.id}
-                        activeOpacity={0.75}
-                        onPress={() => setAddCategoryId(c.id)}
-                        style={[
-                          styles.categorySelectChip,
-                          {
-                            backgroundColor: isSelected ? theme.primaryMuted : theme.surfaceSubtle,
-                            borderColor: isSelected ? theme.primary : 'transparent',
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={(c.icon as any) || 'pricetag-outline'}
-                          size={16}
-                          color={isSelected ? theme.primary : theme.textSecondary}
-                        />
-                        <Text
-                          style={[
-                            Typography.caption,
-                            {
-                              color: isSelected ? theme.primary : theme.textPrimary,
-                              fontWeight: isSelected ? '700' : '500',
-                              marginLeft: 4,
-                            },
-                          ]}
-                        >
-                          {c.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-
-                {/* Amount Input */}
-                <Text style={[Typography.subhead, styles.inputLabel, { color: theme.textPrimary }]}>
-                  {Strings.budgets.budgetAmountLabel}
-                </Text>
-                <View
-                  style={[
-                    styles.amountInputRow,
-                    { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-                  ]}
-                >
-                  <TextInput
-                    value={addAmountStr}
-                    onChangeText={setAddAmountStr}
-                    placeholder={Strings.budgets.budgetAmountPlaceholder}
-                    placeholderTextColor={theme.textTertiary}
-                    keyboardType="decimal-pad"
-                    style={[
-                      Typography.title2,
-                      styles.amountInput,
-                      { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
-                    ]}
-                    autoFocus
-                  />
-                  <Text style={[Typography.subhead, { color: theme.primary, fontWeight: '700' }]}>
-                    {Strings.common.currency}
-                  </Text>
-                </View>
-
-                {/* Action Button */}
-                <View style={styles.modalActionRow}>
-                  <Button
-                    title={Strings.budgets.saveBudget}
-                    onPress={handleCreateBudget}
-                    loading={addSubmitting}
-                    variant="primary"
-                  />
-                </View>
-              </>
-            )}
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* EDIT BUDGET MODAL */}
-      <Modal
-        visible={Boolean(editingItem)}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setEditingItem(null)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={[styles.modalBackdrop, { backgroundColor: theme.modalBackdrop }]}
-        >
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              Shadows.elevated,
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={[Typography.title3, { color: theme.textPrimary, fontWeight: '700' }]}>
-                {editingItem?.category_id === null
-                  ? Strings.budgets.overallBudget
-                  : categoryMap.get(editingItem?.category_id || '')?.name || Strings.budgets.editBudget}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setEditingItem(null)}
-                style={[styles.modalCloseBtn, { backgroundColor: theme.surfaceSubtle }]}
-              >
-                <Ionicons name="close" size={18} color={theme.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            {editError && (
-              <View style={{ marginBottom: Spacing.sm }}>
-                <ErrorBanner message={editError} onDismiss={() => setEditError(null)} />
-              </View>
-            )}
-
-            <Text style={[Typography.subhead, styles.inputLabel, { color: theme.textPrimary }]}>
-              {Strings.budgets.editAmountPrompt}
-            </Text>
-
-            <View
-              style={[
-                styles.amountInputRow,
-                { backgroundColor: theme.surfaceSubtle, borderColor: theme.border },
-              ]}
-            >
-              <TextInput
-                value={editAmountStr}
-                onChangeText={setEditAmountStr}
-                placeholder={Strings.budgets.budgetAmountPlaceholder}
-                placeholderTextColor={theme.textTertiary}
-                keyboardType="decimal-pad"
-                style={[
-                  Typography.title2,
-                  styles.amountInput,
-                  { color: theme.textPrimary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
-                ]}
-                autoFocus
-              />
-              <Text style={[Typography.subhead, { color: theme.primary, fontWeight: '700' }]}>
-                {Strings.common.currency}
-              </Text>
-            </View>
-
-            {/* Note if overall budget */}
-            {editingItem?.category_id === null && (
-              <Text style={[Typography.caption, { color: theme.textTertiary, marginVertical: Spacing.xs }]}>
-                {Strings.budgets.deleteOverallNote}
-              </Text>
-            )}
-
-            {/* Modal Actions: Save and Delete */}
-            <View style={{ marginTop: Spacing.md, gap: Spacing.xs }}>
-              <Button
-                title={Strings.budgets.saveChanges}
-                onPress={handleUpdateBudget}
-                loading={editSubmitting}
-                variant="primary"
-              />
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  setDeleteConfirmItem(editingItem);
-                }}
-                style={styles.deleteBudgetTrigger}
-              >
-                <Ionicons name="trash-outline" size={16} color={theme.expense} />
-                <Text style={[Typography.bodyMedium, { color: theme.expense, fontWeight: '600', marginLeft: 4 }]}>
-                  {Strings.budgets.deleteBudget}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* DELETE CONFIRMATION MODAL */}
-      <Modal
+      {/* DELETE CONFIRMATION DIALOG */}
+      <ConfirmModal
         visible={Boolean(deleteConfirmItem)}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteConfirmItem(null)}
-      >
-        <View style={[styles.modalBackdrop, { backgroundColor: theme.modalBackdrop }]}>
-          <View
-            style={[
-              styles.modalCard,
-              { backgroundColor: theme.surface, borderColor: theme.border },
-              Shadows.elevated,
-            ]}
-          >
-            <View style={[styles.deleteIconWrapper, { backgroundColor: theme.expenseBg }]}>
-              <Ionicons name="trash-outline" size={32} color={theme.expense} />
-            </View>
-
-            <Text style={[Typography.title3, styles.deleteTitle, { color: theme.textPrimary }]}>
-              {Strings.budgets.deleteConfirmTitle}
-            </Text>
-
-            <Text style={[Typography.bodyMedium, styles.deleteBody, { color: theme.textSecondary }]}>
-              {deleteConfirmItem?.category_id === null
-                ? `${Strings.budgets.deleteConfirmBody(Strings.budgets.overallBudget)}\n\n${Strings.budgets.deleteOverallNote}`
-                : Strings.budgets.deleteConfirmBody(
-                    categoryMap.get(deleteConfirmItem?.category_id || '')?.name || ''
-                  )}
-            </Text>
-
-            <View style={{ gap: Spacing.xs, marginTop: Spacing.sm }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={deleting}
-                onPress={handleDeleteBudget}
-                style={[styles.deleteConfirmBtn, { backgroundColor: theme.expense }]}
-              >
-                {deleting ? (
-                  <ActivityIndicator color={theme.textInverse} size="small" />
-                ) : (
-                  <Text style={[Typography.headline, { color: theme.textInverse, fontWeight: '700' }]}>
-                    {Strings.budgets.confirmDelete}
-                  </Text>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                disabled={deleting}
-                onPress={() => setDeleteConfirmItem(null)}
-                style={styles.cancelBtn}
-              >
-                <Text style={[Typography.bodyMedium, { color: theme.textSecondary }]}>
-                  {Strings.budgets.cancel}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        title={Strings.budgets.deleteConfirmTitle}
+        message={
+          deleteConfirmItem
+            ? deleteConfirmItem.category_id === null
+              ? `${Strings.budgets.deleteConfirmBody(Strings.budgets.overallBudget)} ${Strings.budgets.deleteOverallNote}`
+              : Strings.budgets.deleteConfirmBody(
+                  categoryMap.get(deleteConfirmItem.category_id || '')?.name || ''
+                )
+            : ''
+        }
+        confirmLabel={Strings.budgets.confirmDelete}
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirmItem(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -904,87 +541,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
     borderBottomWidth: 1,
   },
   screenTitle: {
     fontWeight: '800',
   },
-  headerAddBtn: {
+  addHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: Spacing.xs + 2,
     borderRadius: Radii.full,
+    gap: 4,
   },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  addBtnText: {
+    fontWeight: '700',
   },
   scrollContent: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl * 2,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xs + 2,
     paddingHorizontal: Spacing.md,
-    paddingBottom: 90,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    marginTop: Spacing.xs,
+    alignSelf: 'center',
   },
   heroCard: {
     borderRadius: Radii.xl,
     borderWidth: 1.5,
     padding: Spacing.lg,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
-  heroHeaderRow: {
+  heroTopRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
   },
   heroTitleCol: {
     flex: 1,
   },
-  heroBadgeRow: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  heroIconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroTitle: {
-    fontWeight: '700',
-  },
-  statusBadge: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radii.full,
+    gap: 6,
   },
-  warningBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radii.md,
-    marginBottom: Spacing.sm,
-  },
-  heroProgressTrack: {
-    height: 12,
-    borderRadius: Radii.full,
-    overflow: 'hidden',
-    marginBottom: Spacing.md,
-  },
-  heroProgressFill: {
-    height: '100%',
+  statusDot: {
+    width: 8,
+    height: 8,
     borderRadius: Radii.full,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
   },
   statCol: {
     flex: 1,
@@ -997,173 +617,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Spacing.sm,
     borderTopWidth: 1,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  emptyOverallCard: {
+    borderRadius: Radii.xl,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    padding: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xl,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   sectionTitle: {
     fontWeight: '700',
   },
   categoryBudgetsList: {
     gap: Spacing.xs,
-  },
-  categoryCard: {
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    padding: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-  catCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.sm,
-  },
-  catTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    flex: 1,
-  },
-  catIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  catName: {
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  catRightCol: {
-    alignItems: 'flex-end',
-  },
-  catRemainingText: {
-    fontWeight: '700',
-  },
-  catProgressTrack: {
-    height: 6,
-    borderRadius: Radii.full,
-    overflow: 'hidden',
-  },
-  catProgressFill: {
-    height: '100%',
-    borderRadius: Radii.full,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.lg,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: Radii.xl,
-    borderWidth: 1,
-    padding: Spacing.lg,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.md,
-  },
-  modalCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  noCategoriesBox: {
-    alignItems: 'center',
-    paddingVertical: Spacing.lg,
-  },
-  inputLabel: {
-    fontWeight: '700',
-    marginBottom: Spacing.xs,
-  },
-  categoryChipsScroll: {
-    gap: Spacing.xs,
-    paddingVertical: 2,
-    marginBottom: Spacing.md,
-  },
-  categorySelectChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.full,
-    borderWidth: 1.5,
-  },
-  amountInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    marginBottom: Spacing.md,
-  },
-  amountInput: {
-    flex: 1,
-    padding: 0,
-  },
-  modalActionRow: {
-    marginTop: Spacing.xs,
-  },
-  deleteBudgetTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  deleteIconWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: Radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
-  },
-  deleteTitle: {
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: Spacing.xs,
-  },
-  deleteBody: {
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: Spacing.md,
-  },
-  deleteConfirmBtn: {
-    height: 48,
-    borderRadius: Radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelBtn: {
-    height: 44,
-    borderRadius: Radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radii.lg,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
   },
 });

@@ -7,11 +7,7 @@ import {
   RefreshControl,
   useColorScheme,
   TouchableOpacity,
-  ActivityIndicator,
-  Modal,
   I18nManager,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,42 +18,21 @@ import {
   Spacing,
   Radii,
   Shadows,
-  BrandColors,
 } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { Button, Input, BackButton, ErrorBanner } from '../../components/ui';
-import { EmptyState } from '../../components/home';
+import {
+  BackButton,
+  ErrorBanner,
+  LoadingView,
+  ConfirmModal,
+  EmptyState,
+  CategoryListItem,
+  CategoryFormModal,
+} from '../../components';
 import api from '../../services/api';
 import { Category, CategoryType } from '../../types/models';
 import { GetCategoriesResponse } from '../../types/api';
 import { getErrorMessage } from '../../utils/errors';
-
-interface PresetIconItem {
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-}
-
-const CATEGORY_PRESET_ICONS: PresetIconItem[] = [
-  { name: 'cart-outline', icon: 'cart-outline', label: 'تسوق' },
-  { name: 'restaurant-outline', icon: 'restaurant-outline', label: 'طعام' },
-  { name: 'car-outline', icon: 'car-outline', label: 'مواصلات' },
-  { name: 'flash-outline', icon: 'flash-outline', label: 'فواتير' },
-  { name: 'home-outline', icon: 'home-outline', label: 'سكن' },
-  { name: 'medkit-outline', icon: 'medkit-outline', label: 'صحة' },
-  { name: 'film-outline', icon: 'film-outline', label: 'ترفيه' },
-  { name: 'school-outline', icon: 'school-outline', label: 'تعليم' },
-  { name: 'airplane-outline', icon: 'airplane-outline', label: 'سفر' },
-  { name: 'gift-outline', icon: 'gift-outline', label: 'هدايا' },
-  { name: 'fitness-outline', icon: 'fitness-outline', label: 'رياضة' },
-  { name: 'shirt-outline', icon: 'shirt-outline', label: 'ملابس' },
-  { name: 'cafe-outline', icon: 'cafe-outline', label: 'كافيه' },
-  { name: 'cash-outline', icon: 'cash-outline', label: 'راتب' },
-  { name: 'trending-up-outline', icon: 'trending-up-outline', label: 'استثمار' },
-  { name: 'briefcase-outline', icon: 'briefcase-outline', label: 'عمل حر' },
-  { name: 'wallet-outline', icon: 'wallet-outline', label: 'مكافأة' },
-  { name: 'pricetag-outline', icon: 'pricetag-outline', label: 'أخرى' },
-];
 
 export default function CategoriesScreen() {
   const router = useRouter();
@@ -111,7 +86,6 @@ export default function CategoriesScreen() {
     fetchCategories();
   };
 
-  // Open modal to add category
   const handleOpenAdd = () => {
     setEditingCategory(null);
     setFormName('');
@@ -121,7 +95,6 @@ export default function CategoriesScreen() {
     setIsFormVisible(true);
   };
 
-  // Open modal to edit category
   const handleOpenEdit = (category: Category) => {
     setEditingCategory(category);
     setFormName(category.name);
@@ -131,7 +104,6 @@ export default function CategoriesScreen() {
     setIsFormVisible(true);
   };
 
-  // Client-side and server-side duplicate check
   const handleSaveCategory = async () => {
     const trimmed = formName.trim();
     if (!trimmed) {
@@ -139,7 +111,6 @@ export default function CategoriesScreen() {
       return;
     }
 
-    // 1. Client-side duplicate check
     const isDuplicate = categories.some((c) => {
       if (editingCategory && c.id === editingCategory.id) return false;
       return c.name.trim().toLowerCase() === trimmed.toLowerCase();
@@ -150,19 +121,17 @@ export default function CategoriesScreen() {
       return;
     }
 
-    setSubmitting(true);
-    setNameError(null);
-
     try {
+      setSubmitting(true);
+      setNameError(null);
+
       if (editingCategory) {
-        // PATCH /categories/:id
         await api.patch(`/categories/${editingCategory.id}`, {
           name: trimmed,
           type: formType,
           icon: formIcon,
         });
       } else {
-        // POST /categories
         await api.post('/categories', {
           name: trimmed,
           type: formType,
@@ -172,36 +141,18 @@ export default function CategoriesScreen() {
 
       setIsFormVisible(false);
       fetchCategories();
-    } catch (err: any) {
-      // 2. Server-side duplicate check (HTTP 400 or duplicate message)
-      const status = err?.response?.status;
-      const serverMessage = err?.response?.data?.error || err?.response?.data?.message || '';
-
-      if (
-        status === 400 &&
-        (serverMessage.includes('ALREADY_EXISTS') ||
-          serverMessage.includes('already exists') ||
-          serverMessage.includes('duplicate') ||
-          serverMessage.includes('UNIQUE'))
-      ) {
-        setNameError(Strings.categories.duplicateNameError);
-      } else {
-        setNameError(getErrorMessage(err, Strings.common.errorOccurred));
-      }
+    } catch (err: unknown) {
+      setNameError(getErrorMessage(err, Strings.common.errorOccurred));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Safe category deletion (Transactions become uncategorized)
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
-
-    setDeleting(true);
-    setDeleteError(null);
-
     try {
-      // DELETE /categories/:id
+      setDeleting(true);
+      setDeleteError(null);
       await api.delete(`/categories/${categoryToDelete.id}`);
       setCategoryToDelete(null);
       fetchCategories();
@@ -212,17 +163,14 @@ export default function CategoriesScreen() {
     }
   };
 
-  // Filtered list
-  const filteredCategories = categories.filter((cat) => {
-    if (activeTab === 'all') return true;
-    return cat.type === activeTab;
+  const filteredCategories = categories.filter((c) => {
+    if (activeTab === 'expense') return c.type === 'expense';
+    if (activeTab === 'income') return c.type === 'income';
+    return true;
   });
 
-  const getValidIconName = (iconStr?: string | null): keyof typeof Ionicons.glyphMap => {
-    if (!iconStr) return 'pricetag-outline';
-    const found = CATEGORY_PRESET_ICONS.find((p) => p.name === iconStr);
-    return found ? found.icon : 'pricetag-outline';
-  };
+  const expenseCount = categories.filter((c) => c.type === 'expense').length;
+  const incomeCount = categories.filter((c) => c.type === 'income').length;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -264,19 +212,19 @@ export default function CategoriesScreen() {
       </View>
 
       {/* Filter Tabs (All / Expenses / Income) */}
-      <View style={[styles.filterBar, { borderBottomColor: theme.border }]}>
+      <View style={[styles.tabsContainer, { backgroundColor: theme.surfaceSubtle }]}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setActiveTab('all')}
           style={[
-            styles.filterTab,
-            activeTab === 'all' && [styles.filterTabActive, { borderBottomColor: theme.primary }],
+            styles.tabOption,
+            activeTab === 'all' && [styles.tabOptionActive, { backgroundColor: theme.surface }, Shadows.subtle],
           ]}
         >
           <Text
             style={[
-              Typography.subhead,
-              styles.filterTabText,
+              Typography.caption,
+              styles.tabText,
               {
                 color: activeTab === 'all' ? theme.primary : theme.textSecondary,
                 fontWeight: activeTab === 'all' ? '700' : '500',
@@ -291,21 +239,21 @@ export default function CategoriesScreen() {
           activeOpacity={0.7}
           onPress={() => setActiveTab('expense')}
           style={[
-            styles.filterTab,
-            activeTab === 'expense' && [styles.filterTabActive, { borderBottomColor: theme.expense }],
+            styles.tabOption,
+            activeTab === 'expense' && [styles.tabOptionActive, { backgroundColor: theme.surface }, Shadows.subtle],
           ]}
         >
           <Text
             style={[
-              Typography.subhead,
-              styles.filterTabText,
+              Typography.caption,
+              styles.tabText,
               {
                 color: activeTab === 'expense' ? theme.expense : theme.textSecondary,
                 fontWeight: activeTab === 'expense' ? '700' : '500',
               },
             ]}
           >
-            {Strings.categories.filterExpense} ({categories.filter((c) => c.type === 'expense').length})
+            {Strings.categories.filterExpense} ({expenseCount})
           </Text>
         </TouchableOpacity>
 
@@ -313,33 +261,28 @@ export default function CategoriesScreen() {
           activeOpacity={0.7}
           onPress={() => setActiveTab('income')}
           style={[
-            styles.filterTab,
-            activeTab === 'income' && [styles.filterTabActive, { borderBottomColor: theme.income }],
+            styles.tabOption,
+            activeTab === 'income' && [styles.tabOptionActive, { backgroundColor: theme.surface }, Shadows.subtle],
           ]}
         >
           <Text
             style={[
-              Typography.subhead,
-              styles.filterTabText,
+              Typography.caption,
+              styles.tabText,
               {
                 color: activeTab === 'income' ? theme.income : theme.textSecondary,
                 fontWeight: activeTab === 'income' ? '700' : '500',
               },
             ]}
           >
-            {Strings.categories.filterIncome} ({categories.filter((c) => c.type === 'income').length})
+            {Strings.categories.filterIncome} ({incomeCount})
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.sm }]}>
-            {Strings.common.loading}
-          </Text>
-        </View>
+        <LoadingView />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -352,7 +295,6 @@ export default function CategoriesScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {/* Error Banner when categories exist */}
           {fetchError && categories.length > 0 && (
             <View style={{ marginBottom: Spacing.md }}>
               <ErrorBanner message={fetchError} onDismiss={() => setFetchError(null)} />
@@ -369,347 +311,63 @@ export default function CategoriesScreen() {
             />
           ) : filteredCategories.length === 0 ? (
             <EmptyState
-              icon="pricetag-outline"
+              icon="grid-outline"
               title={Strings.categories.emptyCategories}
               actionTitle={Strings.categories.addFirstCategory}
               onAction={handleOpenAdd}
             />
           ) : (
-            <View style={styles.categoriesGrid}>
-              {filteredCategories.map((category) => {
-                const isExpense = category.type === 'expense';
-                const badgeColor = isExpense ? theme.expense : theme.income;
-                const iconName = getValidIconName(category.icon);
-
-                return (
-                  <View
-                    key={category.id}
-                    style={[
-                      styles.categoryCard,
-                      { backgroundColor: theme.surface, borderColor: theme.border },
-                      Shadows.card,
-                    ]}
-                  >
-                    <View style={styles.cardMainRow}>
-                      <View style={styles.cardLeftCol}>
-                        <View
-                          style={[
-                            styles.categoryIconBox,
-                            { backgroundColor: `${badgeColor}15` },
-                          ]}
-                        >
-                          <Ionicons name={iconName} size={22} color={badgeColor} />
-                        </View>
-                        <View style={styles.categoryTextCol}>
-                          <Text
-                            style={[
-                              Typography.headline,
-                              styles.categoryName,
-                              { color: theme.textPrimary },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {category.name}
-                          </Text>
-                          <View
-                            style={[
-                              styles.typeBadge,
-                              { backgroundColor: `${badgeColor}12` },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                Typography.caption,
-                                { color: badgeColor, fontWeight: '700' },
-                              ]}
-                            >
-                              {isExpense ? Strings.home.typeExpense : Strings.home.typeIncome}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      {/* Action buttons */}
-                      <View style={styles.cardActionsRow}>
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => handleOpenEdit(category)}
-                          style={[
-                            styles.actionButton,
-                            { backgroundColor: theme.surfaceSubtle },
-                          ]}
-                          accessibilityLabel={Strings.common.edit}
-                        >
-                          <Ionicons name="pencil" size={16} color={theme.textPrimary} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={() => setCategoryToDelete(category)}
-                          style={[
-                            styles.actionButton,
-                            { backgroundColor: `${theme.expense}15` },
-                          ]}
-                          accessibilityLabel={Strings.common.delete}
-                        >
-                          <Ionicons name="trash-outline" size={16} color={theme.expense} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
+            <View style={styles.categoriesList}>
+              {filteredCategories.map((category) => (
+                <CategoryListItem
+                  key={category.id}
+                  category={category}
+                  onEdit={() => handleOpenEdit(category)}
+                  onDelete={() => {
+                    setDeleteError(null);
+                    setCategoryToDelete(category);
+                  }}
+                />
+              ))}
             </View>
           )}
         </ScrollView>
       )}
 
       {/* Add / Edit Category Modal */}
-      <Modal
+      <CategoryFormModal
         visible={isFormVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsFormVisible(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface }]}>
-            {/* Modal Header */}
-            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-              <Text style={[Typography.title3, styles.modalTitle, { color: theme.textPrimary }]}>
-                {editingCategory ? Strings.categories.editCategory : Strings.categories.addCategory}
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setIsFormVisible(false)}
-                style={[styles.modalCloseButton, { backgroundColor: theme.surfaceSubtle }]}
-              >
-                <Ionicons name="close" size={20} color={theme.textPrimary} />
-              </TouchableOpacity>
-            </View>
+        editingCategory={editingCategory}
+        formName={formName}
+        onChangeName={(text) => {
+          setFormName(text);
+          if (nameError) setNameError(null);
+        }}
+        formType={formType}
+        onChangeType={setFormType}
+        formIcon={formIcon}
+        onChangeIcon={setFormIcon}
+        nameError={nameError}
+        submitting={submitting}
+        onSubmit={handleSaveCategory}
+        onClose={() => setIsFormVisible(false)}
+      />
 
-            <ScrollView
-              contentContainerStyle={styles.modalScrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Type Switcher (Expense / Income) */}
-              <Text
-                style={[
-                  Typography.subhead,
-                  styles.formSectionLabel,
-                  { color: theme.textSecondary, textAlign: I18nManager.isRTL ? 'right' : 'left' },
-                ]}
-              >
-                {Strings.categories.categoryTypeLabel}
-              </Text>
-
-              <View style={[styles.typeSelectorRow, { backgroundColor: theme.surfaceSubtle }]}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => setFormType('expense')}
-                  style={[
-                    styles.typeSelectorOption,
-                    formType === 'expense' && [
-                      styles.typeSelectorOptionActive,
-                      { backgroundColor: theme.surface },
-                      Shadows.subtle,
-                    ],
-                  ]}
-                >
-                  <Ionicons
-                    name="arrow-up"
-                    size={16}
-                    color={formType === 'expense' ? theme.expense : theme.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      Typography.subhead,
-                      {
-                        color: formType === 'expense' ? theme.expense : theme.textSecondary,
-                        fontWeight: formType === 'expense' ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {Strings.home.typeExpense}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => setFormType('income')}
-                  style={[
-                    styles.typeSelectorOption,
-                    formType === 'income' && [
-                      styles.typeSelectorOptionActive,
-                      { backgroundColor: theme.surface },
-                      Shadows.subtle,
-                    ],
-                  ]}
-                >
-                  <Ionicons
-                    name="arrow-down"
-                    size={16}
-                    color={formType === 'income' ? theme.income : theme.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      Typography.subhead,
-                      {
-                        color: formType === 'income' ? theme.income : theme.textSecondary,
-                        fontWeight: formType === 'income' ? '700' : '500',
-                      },
-                    ]}
-                  >
-                    {Strings.home.typeIncome}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Category Name Input WITH INLINE VALIDATION ERROR */}
-              <Input
-                label={Strings.categories.categoryNameLabel}
-                placeholder={Strings.categories.categoryNamePlaceholder}
-                value={formName}
-                onChangeText={(text) => {
-                  setFormName(text);
-                  if (nameError) setNameError(null);
-                }}
-                error={nameError}
-                autoFocus={true}
-              />
-
-              {/* Preset Icon Grid */}
-              <Text
-                style={[
-                  Typography.subhead,
-                  styles.formSectionLabel,
-                  { color: theme.textSecondary, marginTop: Spacing.sm, textAlign: I18nManager.isRTL ? 'right' : 'left' },
-                ]}
-              >
-                {Strings.categories.categoryIconLabel}
-              </Text>
-
-              <View style={styles.iconGrid}>
-                {CATEGORY_PRESET_ICONS.map((item) => {
-                  const isSelected = formIcon === item.name;
-                  const activeBadgeColor = formType === 'expense' ? theme.expense : theme.income;
-
-                  return (
-                    <TouchableOpacity
-                      key={item.name}
-                      activeOpacity={0.7}
-                      onPress={() => setFormIcon(item.name)}
-                      style={[
-                        styles.iconGridItem,
-                        {
-                          backgroundColor: isSelected ? `${activeBadgeColor}15` : theme.surfaceSubtle,
-                          borderColor: isSelected ? activeBadgeColor : theme.border,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={item.icon}
-                        size={22}
-                        color={isSelected ? activeBadgeColor : theme.textSecondary}
-                      />
-                      <Text
-                        style={[
-                          Typography.caption,
-                          styles.iconLabel,
-                          {
-                            color: isSelected ? activeBadgeColor : theme.textSecondary,
-                            fontWeight: isSelected ? '700' : '400',
-                          },
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Action Buttons */}
-              <View style={styles.modalActionsRow}>
-                <Button
-                  title={editingCategory ? Strings.categories.saveChanges : Strings.categories.saveCategory}
-                  onPress={handleSaveCategory}
-                  loading={submitting}
-                  style={styles.modalSubmitButton}
-                />
-                <Button
-                  title={Strings.common.cancel}
-                  onPress={() => setIsFormVisible(false)}
-                  variant="secondary"
-                  disabled={submitting}
-                />
-              </View>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Delete Confirmation Modal (SAFE NOTICE: Transactions become uncategorized) */}
-      <Modal
-        visible={!!categoryToDelete}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setCategoryToDelete(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View
-            style={[
-              styles.deleteDialog,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              },
-              Shadows.elevated,
-            ]}
-          >
-            {/* Soft Notice Icon Badge */}
-            <View style={[styles.noticeIconBadge, { backgroundColor: theme.primaryMuted }]}>
-              <Ionicons name="information-circle" size={40} color={theme.primary} />
-            </View>
-
-            {/* Notice Title */}
-            <Text style={[Typography.title2, styles.deleteDialogTitle, { color: theme.textPrimary }]}>
-              {Strings.categories.deleteCategoryNoticeTitle}
-            </Text>
-
-            {/* Reassurance Body (transactions are NOT deleted, they become uncategorized) */}
-            <Text style={[Typography.body, styles.deleteDialogBody, { color: theme.textSecondary }]}>
-              {categoryToDelete ? Strings.categories.deleteCategoryNoticeBody(categoryToDelete.name) : ''}
-            </Text>
-
-            {deleteError ? (
-              <Text style={[Typography.caption, styles.dialogErrorText, { color: theme.expense }]}>
-                {deleteError}
-              </Text>
-            ) : null}
-
-            {/* Actions */}
-            <View style={styles.deleteDialogActions}>
-              <Button
-                title={Strings.categories.confirmDeleteCategory}
-                onPress={handleConfirmDelete}
-                variant="danger"
-                loading={deleting}
-              />
-              <Button
-                title={Strings.common.cancel}
-                onPress={() => setCategoryToDelete(null)}
-                variant="secondary"
-                disabled={deleting}
-                style={{ marginTop: Spacing.sm }}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Delete Confirmation Modal (Transactions become uncategorized note) */}
+      <ConfirmModal
+        visible={Boolean(categoryToDelete)}
+        title={Strings.categories.deleteCategoryNoticeTitle}
+        message={
+          categoryToDelete
+            ? Strings.categories.deleteCategoryNoticeBody(categoryToDelete.name)
+            : ''
+        }
+        confirmLabel={Strings.categories.confirmDeleteCategory}
+        loading={deleting}
+        error={deleteError}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setCategoryToDelete(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -723,13 +381,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.md,
   },
   headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   titleWrapper: {
-    marginTop: Spacing.xs,
+    marginHorizontal: Spacing.sm,
   },
   title: {
     fontWeight: '800',
@@ -737,205 +397,39 @@ const styles = StyleSheet.create({
   addHeaderButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xs + 2,
     borderRadius: Radii.full,
-    marginStart: Spacing.sm,
+    gap: 4,
   },
   addHeaderText: {
     fontWeight: '700',
   },
-  filterBar: {
+  tabsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    paddingHorizontal: Spacing.lg,
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radii.lg,
+    padding: 3,
+    marginBottom: Spacing.sm,
   },
-  filterTab: {
-    paddingVertical: Spacing.md,
-    marginEnd: Spacing.xl,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  filterTabActive: {
-    borderBottomWidth: 2,
-  },
-  filterTabText: {},
-  loadingContainer: {
+  tabOption: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: Radii.md,
+  },
+  tabOptionActive: {
+    borderRadius: Radii.md,
+  },
+  tabText: {
+    textAlign: 'center',
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xxxl,
+    paddingBottom: Spacing.xxl * 2,
   },
-  categoriesGrid: {
-    gap: Spacing.sm,
-  },
-  categoryCard: {
-    borderRadius: Radii.xl,
-    borderWidth: 1,
-    padding: Spacing.md,
-  },
-  cardMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardLeftCol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: Spacing.md,
-  },
-  categoryIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: Radii.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryTextCol: {
-    flex: 1,
-  },
-  categoryName: {
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  typeBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: Radii.full,
-  },
-  cardActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  categoriesList: {
     gap: Spacing.xs,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: Radii.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    borderTopLeftRadius: Radii.xxl,
-    borderTopRightRadius: Radii.xxl,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    borderBottomWidth: 1,
-  },
-  modalTitle: {
-    fontWeight: '700',
-  },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalScrollContent: {
-    padding: Spacing.xl,
-  },
-  formSectionLabel: {
-    fontWeight: '600',
-    marginBottom: Spacing.xs,
-  },
-  typeSelectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 4,
-    borderRadius: Radii.lg,
-    marginBottom: Spacing.lg,
-  },
-  typeSelectorOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.md,
-  },
-  typeSelectorOptionActive: {
-    borderRadius: Radii.md,
-  },
-  iconGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  iconGridItem: {
-    width: '30%',
-    flexGrow: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xs,
-    borderRadius: Radii.lg,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconLabel: {
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  modalActionsRow: {
-    gap: Spacing.sm,
-  },
-  modalSubmitButton: {
-    marginBottom: Spacing.xs,
-  },
-  deleteDialog: {
-    marginHorizontal: Spacing.xl,
-    borderRadius: Radii.xxl,
-    borderWidth: 1,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    alignSelf: 'center',
-    maxWidth: 400,
-    width: '90%',
-  },
-  noticeIconBadge: {
-    width: 72,
-    height: 72,
-    borderRadius: Radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  deleteDialogTitle: {
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  deleteDialogBody: {
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: Spacing.lg,
-  },
-  dialogErrorText: {
-    textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  deleteDialogActions: {
-    width: '100%',
   },
 });

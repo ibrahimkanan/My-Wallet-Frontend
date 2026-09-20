@@ -23,8 +23,7 @@ import {
   BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
-import { MonthYearSelector, ErrorBanner } from '../../../components/ui';
-import { EmptyState } from '../../../components/home';
+import { MonthYearSelector, ErrorBanner, LoadingView, ProgressBar, EmptyState } from '../../../components';
 import api from '../../../services/api';
 import { getErrorMessage } from '../../../utils/errors';
 import {
@@ -250,12 +249,7 @@ export default function ChartsScreen() {
       />
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.sm }]}>
-            {Strings.common.loading}
-          </Text>
-        </View>
+        <LoadingView />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -494,17 +488,12 @@ export default function ChartsScreen() {
                           </View>
 
                           {/* Individual Progress Track */}
-                          <View style={[styles.individualTrack, { backgroundColor: theme.surfaceSubtle }]}>
-                            <View
-                              style={[
-                                styles.individualFill,
-                                {
-                                  width: `${Math.min(ratio * 100, 100)}%`,
-                                  backgroundColor: color,
-                                },
-                              ]}
-                            />
-                          </View>
+                          <ProgressBar
+                            progress={ratio}
+                            color={color}
+                            height={5}
+                            style={{ marginTop: Spacing.xs }}
+                          />
                         </View>
                       );
                     })}
