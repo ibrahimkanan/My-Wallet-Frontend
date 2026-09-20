@@ -25,7 +25,7 @@ import {
   BrandColors,
 } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { Button, Input, BackButton } from '../../components/ui';
+import { Button, Input, BackButton, ErrorBanner } from '../../components/ui';
 import { EmptyState } from '../../components/home';
 import api from '../../services/api';
 import { Category, CategoryType } from '../../types/models';
@@ -67,6 +67,7 @@ export default function CategoriesScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Active filter tab: 'all' | 'expense' | 'income'
   const [activeTab, setActiveTab] = useState<'all' | 'expense' | 'income'>('all');
@@ -87,12 +88,14 @@ export default function CategoriesScreen() {
 
   const fetchCategories = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await api.get<GetCategoriesResponse>('/categories');
       if (res.data?.categories) {
         setCategories(res.data.categories);
       }
     } catch (err) {
       console.warn('[Categories] Failed to load categories:', err);
+      setFetchError(getErrorMessage(err, Strings.common.errorOccurred));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -349,7 +352,22 @@ export default function CategoriesScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
-          {filteredCategories.length === 0 ? (
+          {/* Error Banner when categories exist */}
+          {fetchError && categories.length > 0 && (
+            <View style={{ marginBottom: Spacing.md }}>
+              <ErrorBanner message={fetchError} onDismiss={() => setFetchError(null)} />
+            </View>
+          )}
+
+          {fetchError && categories.length === 0 ? (
+            <EmptyState
+              icon="alert-circle-outline"
+              title={fetchError}
+              subtitle={Strings.common.networkError}
+              actionTitle={Strings.common.retry}
+              onAction={fetchCategories}
+            />
+          ) : filteredCategories.length === 0 ? (
             <EmptyState
               icon="pricetag-outline"
               title={Strings.categories.emptyCategories}

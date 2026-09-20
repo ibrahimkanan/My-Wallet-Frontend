@@ -114,8 +114,25 @@ export default function TransactionFormModal() {
         if (existingTx) {
           setType(existingTx.type);
           setAmountStr(String(existingTx.amount));
-          setSelectedWalletId(existingTx.wallet_id);
-          setSelectedCategoryId(existingTx.category_id || null);
+
+          // Check if wallet still exists
+          const walletStillExists = loadedWallets.some((w) => w.id === existingTx!.wallet_id);
+          if (walletStillExists) {
+            setSelectedWalletId(existingTx.wallet_id);
+          } else {
+            // Previously linked wallet was deleted
+            setSelectedWalletId(loadedWallets[0]?.id || '');
+            setWalletError(Strings.transactionForm.errorWalletNotFound);
+          }
+
+          // Check if category still exists
+          if (existingTx.category_id) {
+            const categoryStillExists = loadedCategories.some((c) => c.id === existingTx!.category_id);
+            setSelectedCategoryId(categoryStillExists ? existingTx.category_id : null);
+          } else {
+            setSelectedCategoryId(null);
+          }
+
           setTransactionDate(existingTx.transaction_date.slice(0, 10));
           setNote(existingTx.note || '');
         } else {
@@ -266,6 +283,7 @@ export default function TransactionFormModal() {
         <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
           <TouchableOpacity
             activeOpacity={0.7}
+            disabled={submitting}
             onPress={() => router.back()}
             style={[styles.closeButton, { backgroundColor: theme.surfaceSubtle }]}
           >
@@ -311,6 +329,7 @@ export default function TransactionFormModal() {
               {/* Expense Option */}
               <TouchableOpacity
                 activeOpacity={0.8}
+                disabled={submitting}
                 onPress={() => handleTypeToggle('expense')}
                 style={[
                   styles.toggleOption,
@@ -342,6 +361,7 @@ export default function TransactionFormModal() {
               {/* Income Option */}
               <TouchableOpacity
                 activeOpacity={0.8}
+                disabled={submitting}
                 onPress={() => handleTypeToggle('income')}
                 style={[
                   styles.toggleOption,
@@ -399,6 +419,7 @@ export default function TransactionFormModal() {
 
                 <TextInput
                   value={amountStr}
+                  editable={!submitting}
                   onChangeText={(val) => {
                     // Allow digits and single decimal point
                     const cleaned = val.replace(/[^0-9.]/g, '');
@@ -482,6 +503,7 @@ export default function TransactionFormModal() {
                       <TouchableOpacity
                         key={wallet.id}
                         activeOpacity={0.75}
+                        disabled={submitting}
                         onPress={() => {
                           setSelectedWalletId(wallet.id);
                           setWalletError(null);
@@ -560,6 +582,7 @@ export default function TransactionFormModal() {
                 {/* Optional "بدون فئة" (Uncategorized) chip */}
                 <TouchableOpacity
                   activeOpacity={0.75}
+                  disabled={submitting}
                   onPress={() => {
                     setSelectedCategoryId(null);
                     setCategoryError(null);
@@ -605,6 +628,7 @@ export default function TransactionFormModal() {
                     <TouchableOpacity
                       key={cat.id}
                       activeOpacity={0.75}
+                      disabled={submitting}
                       onPress={() => {
                         setSelectedCategoryId(cat.id);
                         setCategoryError(null);
@@ -653,6 +677,7 @@ export default function TransactionFormModal() {
                 {/* Today */}
                 <TouchableOpacity
                   activeOpacity={0.75}
+                  disabled={submitting}
                   onPress={() => setTransactionDate(todayISO)}
                   style={[
                     styles.dateOptionChip,
@@ -683,6 +708,7 @@ export default function TransactionFormModal() {
                 {/* Yesterday */}
                 <TouchableOpacity
                   activeOpacity={0.75}
+                  disabled={submitting}
                   onPress={() => setTransactionDate(yesterdayISO)}
                   style={[
                     styles.dateOptionChip,
@@ -714,6 +740,7 @@ export default function TransactionFormModal() {
                 {/* Custom Date Picker Trigger */}
                 <TouchableOpacity
                   activeOpacity={0.75}
+                  disabled={submitting}
                   onPress={() => setShowDatePicker(true)}
                   style={[
                     styles.dateOptionChip,
@@ -788,6 +815,7 @@ export default function TransactionFormModal() {
               >
                 <TextInput
                   value={note}
+                  editable={!submitting}
                   onChangeText={setNote}
                   placeholder={Strings.transactionForm.notePlaceholder}
                   placeholderTextColor={theme.textTertiary}

@@ -25,7 +25,7 @@ import {
   BrandColors,
 } from '../../constants/theme';
 import { Strings } from '../../constants/strings';
-import { Button, Input, BackButton, WalletTypeCard } from '../../components/ui';
+import { Button, Input, BackButton, WalletTypeCard, ErrorBanner } from '../../components/ui';
 import { EmptyState } from '../../components/home';
 import api from '../../services/api';
 import { Wallet, WalletType } from '../../types/models';
@@ -41,6 +41,7 @@ export default function WalletsScreen() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Form Modal State (Add / Edit)
   const [isFormVisible, setIsFormVisible] = useState(false);
@@ -57,12 +58,14 @@ export default function WalletsScreen() {
 
   const fetchWallets = useCallback(async () => {
     try {
+      setFetchError(null);
       const res = await api.get<GetWalletsResponse>('/wallets');
       if (res.data?.wallets) {
         setWallets(res.data.wallets);
       }
     } catch (err) {
       console.warn('[Wallets] Failed to load wallets:', err);
+      setFetchError(getErrorMessage(err, Strings.common.errorOccurred));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -228,6 +231,13 @@ export default function WalletsScreen() {
           }
           showsVerticalScrollIndicator={false}
         >
+          {/* Error Banner when wallets already exist */}
+          {fetchError && wallets.length > 0 && (
+            <View style={{ marginBottom: Spacing.md }}>
+              <ErrorBanner message={fetchError} onDismiss={() => setFetchError(null)} />
+            </View>
+          )}
+
           {/* Total Assets Summary Banner */}
           <View
             style={[
@@ -264,7 +274,15 @@ export default function WalletsScreen() {
           </View>
 
           {/* Wallets List */}
-          {wallets.length === 0 ? (
+          {fetchError && wallets.length === 0 ? (
+            <EmptyState
+              icon="alert-circle-outline"
+              title={fetchError}
+              subtitle={Strings.common.networkError}
+              actionTitle={Strings.common.retry}
+              onAction={fetchWallets}
+            />
+          ) : wallets.length === 0 ? (
             <EmptyState
               icon="wallet-outline"
               title={Strings.wallets.emptyWallets}
