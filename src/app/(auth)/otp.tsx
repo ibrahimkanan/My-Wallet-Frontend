@@ -169,8 +169,12 @@ export default function OtpScreen() {
               {Strings.auth.otpSubtitle}{' '}
               <Text style={{ fontWeight: '700', color: theme.textPrimary }}>{email}</Text>
             </Text>
-            <TouchableOpacity onPress={() => router.back()} style={styles.changeEmailButton}>
-              <Text style={[Typography.footnote, { color: theme.primary, fontWeight: '700' }]}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              disabled={loading}
+              style={styles.changeEmailButton}
+            >
+              <Text style={[Typography.footnote, { color: loading ? theme.textTertiary : theme.primary, fontWeight: '700' }]}>
                 {Strings.auth.changeEmail}
               </Text>
             </TouchableOpacity>

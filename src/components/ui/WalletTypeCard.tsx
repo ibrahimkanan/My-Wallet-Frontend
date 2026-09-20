@@ -16,6 +16,7 @@ export interface WalletTypeCardProps {
   description: string;
   selected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
 }
 
 export function WalletTypeCard({
@@ -24,6 +25,7 @@ export function WalletTypeCard({
   description,
   selected,
   onSelect,
+  disabled = false,
 }: WalletTypeCardProps) {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? ThemeColors.dark : ThemeColors.light;
@@ -43,6 +45,7 @@ export function WalletTypeCard({
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onSelect}
+      disabled={disabled}
       style={[
         styles.card,
         Shadows.card,

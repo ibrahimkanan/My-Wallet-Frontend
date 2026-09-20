@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -26,11 +27,17 @@ export default function OnboardingProfileScreen() {
 
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const [name, setName] = useState(user?.name || '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSwitchAccount = async () => {
+    await clearAuth();
+    router.replace('/(auth)/login');
+  };
 
   const handleContinue = async () => {
     const trimmedName = name.trim();
@@ -192,6 +199,17 @@ export default function OnboardingProfileScreen() {
               disabled={!name.trim()}
               style={styles.continueButton}
             />
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleSwitchAccount}
+              disabled={loading}
+              style={styles.switchAccountButton}
+            >
+              <Text style={[Typography.caption, { color: theme.textSecondary, fontWeight: '600', textAlign: 'center' }]}>
+                {Strings.onboarding.changeAccount}
+              </Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -257,5 +275,10 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     marginTop: Spacing.md,
+  },
+  switchAccountButton: {
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
   },
 });

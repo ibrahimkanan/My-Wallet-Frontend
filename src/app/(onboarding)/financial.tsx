@@ -173,6 +173,7 @@ export default function OnboardingFinancialScreen() {
             description={Strings.onboarding.walletBankDesc}
             selected={walletType === 'bank'}
             onSelect={() => setWalletType('bank')}
+            disabled={loading}
           />
 
           <WalletTypeCard
@@ -181,6 +182,7 @@ export default function OnboardingFinancialScreen() {
             description={Strings.onboarding.walletCashDesc}
             selected={walletType === 'cash'}
             onSelect={() => setWalletType('cash')}
+            disabled={loading}
           />
 
           <WalletTypeCard
@@ -189,6 +191,7 @@ export default function OnboardingFinancialScreen() {
             description={Strings.onboarding.walletCardDesc}
             selected={walletType === 'card'}
             onSelect={() => setWalletType('card')}
+            disabled={loading}
           />
 
           {/* Monthly Income / Budget Input */}
@@ -216,7 +219,7 @@ export default function OnboardingFinancialScreen() {
             title={Strings.onboarding.finishSetupButton}
             onPress={handleFinish}
             loading={loading}
-            disabled={!monthlyIncome.trim()}
+            disabled={!monthlyIncome.trim() || loading}
             style={styles.finishButton}
           />
         </ScrollView>

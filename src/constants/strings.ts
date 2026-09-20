@@ -19,6 +19,7 @@ export const Strings = {
     errorOccurred: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
     networkError: 'تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم والاتصال بالإنترنت.',
     timeoutError: 'انتهت مهلة الطلب. يرجى التحقق من اتصالك والمحاولة مجدداً.',
+    retry: 'إعادة المحاولة',
   },
 
   auth: {
@@ -60,6 +61,7 @@ export const Strings = {
     passwordHelper: 'اختياري: يمكنك تعيينها أو تعديلها لاحقاً من الإعدادات.',
     passwordLengthError: 'يجب أن تكون كلمة المرور 8 خانات على الأقل',
     continueToFinanceButton: 'المتابعة إلى الإعداد المالي',
+    changeAccount: 'تسجيل الدخول بحساب آخر',
 
     // Step 2: Financial Setup
     financialStepIndicator: 'الخطوة 2 من 2: الإعداد المالي',
