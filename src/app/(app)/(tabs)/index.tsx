@@ -44,6 +44,8 @@ import {
   EmptyState,
   FloatingActionButton,
 } from '../../../components/home';
+import { ErrorBanner } from '../../../components/ui';
+import { getErrorMessage } from '../../../utils/errors';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -63,10 +65,16 @@ export default function HomeScreen() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Fetch all dashboard data concurrently
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (isRefresh = false) => {
     try {
+      if (!isRefresh && wallets.length === 0 && transactions.length === 0) {
+        setLoading(true);
+      }
+      setError(null);
+
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
@@ -80,6 +88,12 @@ export default function HomeScreen() {
           api.get<GetTransactionsResponse>('/transactions?limit=5'),
           api.get<GetCategoriesResponse>('/categories'),
         ]);
+
+      // If wallets or transactions failed, surface an informative error
+      if (walletsRes.status === 'rejected' && transactionsRes.status === 'rejected') {
+        const failureReason = walletsRes.reason || transactionsRes.reason;
+        setError(getErrorMessage(failureReason, Strings.common.networkError));
+      }
 
       // 1. Wallets
       if (walletsRes.status === 'fulfilled' && walletsRes.value.data?.wallets) {
@@ -132,11 +146,12 @@ export default function HomeScreen() {
       }
     } catch (err) {
       console.warn('[Home] Error fetching dashboard data:', err);
+      setError(getErrorMessage(err, Strings.common.errorOccurred));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.default_monthly_budget]);
+  }, [user?.default_monthly_budget, wallets.length, transactions.length]);
 
   useFocusEffect(
     useCallback(() => {
@@ -219,6 +234,26 @@ export default function HomeScreen() {
                 <Ionicons name="person" size={18} color={theme.primary} />
               </TouchableOpacity>
             </View>
+
+            {/* Error Banner with Retry Action */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <ErrorBanner message={error} onDismiss={() => setError(null)} />
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setLoading(true);
+                    fetchDashboardData();
+                  }}
+                  style={[styles.retryBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                >
+                  <Ionicons name="refresh-outline" size={16} color={theme.primary} />
+                  <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700', marginHorizontal: 6 }]}>
+                    {Strings.common.retry}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Total Balance Hero Card */}
             <View
@@ -477,5 +512,19 @@ const styles = StyleSheet.create({
   },
   transactionsList: {
     marginTop: Spacing.xs,
+  },
+  errorContainer: {
+    marginBottom: Spacing.md,
+    gap: Spacing.xs,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
   },
 });

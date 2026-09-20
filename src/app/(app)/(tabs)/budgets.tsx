@@ -319,15 +319,59 @@ export default function BudgetsScreen() {
           }
         >
           {generalError && (
-            <View style={{ marginBottom: Spacing.md }}>
+            <View style={{ marginBottom: Spacing.md, gap: Spacing.xs }}>
               <ErrorBanner
                 message={generalError}
                 onDismiss={() => setGeneralError(null)}
               />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setLoading(true);
+                  fetchBudgetsData();
+                }}
+                style={[styles.retryBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              >
+                <Ionicons name="refresh-outline" size={16} color={theme.primary} />
+                <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700', marginHorizontal: 6 }]}>
+                  {Strings.common.retry}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
           {/* PRIMARY HERO: Overall Budget Card */}
+          {!overallBudget && (
+            <View
+              style={[
+                styles.heroCard,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  borderStyle: 'dashed',
+                  marginBottom: Spacing.lg,
+                },
+                Shadows.card,
+              ]}
+            >
+              <View style={styles.heroHeaderRow}>
+                <View style={styles.heroTitleCol}>
+                  <View style={styles.heroBadgeRow}>
+                    <View style={[styles.heroIconBadge, { backgroundColor: theme.surfaceSubtle }]}>
+                      <Ionicons name="pie-chart-outline" size={18} color={theme.textTertiary} />
+                    </View>
+                    <Text style={[Typography.title3, styles.heroTitle, { color: theme.textPrimary }]}>
+                      {Strings.budgets.overallBudget}
+                    </Text>
+                  </View>
+                  <Text style={[Typography.caption, { color: theme.textSecondary, marginTop: Spacing.xs }]}>
+                    {Strings.budgets.deleteOverallNote}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {overallBudget && (() => {
             const status = getBudgetStatus(overallBudget.budgeted, overallBudget.spent);
             const clampedProgress = Math.min(Math.max(status.ratio, 0), 1);
@@ -1111,5 +1155,15 @@ const styles = StyleSheet.create({
     borderRadius: Radii.lg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
   },
 });

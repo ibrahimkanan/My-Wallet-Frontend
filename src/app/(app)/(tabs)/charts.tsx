@@ -23,9 +23,10 @@ import {
   BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
-import { MonthYearSelector } from '../../../components/ui';
+import { MonthYearSelector, ErrorBanner } from '../../../components/ui';
 import { EmptyState } from '../../../components/home';
 import api from '../../../services/api';
+import { getErrorMessage } from '../../../utils/errors';
 import {
   MonthlyChartSummary,
   YearlyChartSummary,
@@ -68,6 +69,7 @@ export default function ChartsScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Inspected Month in Yearly View
   const [inspectedMonth, setInspectedMonth] = useState<number | null>(
@@ -85,6 +87,7 @@ export default function ChartsScreen() {
     async (isRefresh = false) => {
       try {
         if (!isRefresh) setLoading(true);
+        setError(null);
 
         const categoriesPromise =
           categories.length === 0
@@ -120,6 +123,7 @@ export default function ChartsScreen() {
         }
       } catch (err) {
         console.warn('[Charts] Error fetching chart data:', err);
+        setError(getErrorMessage(err, Strings.common.errorOccurred));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -264,6 +268,26 @@ export default function ChartsScreen() {
             />
           }
         >
+          {/* Error Banner with Retry Action */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <ErrorBanner message={error} onDismiss={() => setError(null)} />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => {
+                  setLoading(true);
+                  fetchChartData();
+                }}
+                style={[styles.retryBtn, { backgroundColor: theme.surface, borderColor: theme.border }]}
+              >
+                <Ionicons name="refresh-outline" size={16} color={theme.primary} />
+                <Text style={[Typography.caption, { color: theme.primary, fontWeight: '700', marginHorizontal: 6 }]}>
+                  {Strings.common.retry}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* ========================================================================= */}
           {/* MONTHLY VIEW */}
           {/* ========================================================================= */}
@@ -976,5 +1000,19 @@ const styles = StyleSheet.create({
   },
   monthBarLabel: {
     fontSize: 11,
+  },
+  errorContainer: {
+    marginBottom: Spacing.md,
+    gap: Spacing.xs,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
   },
 });

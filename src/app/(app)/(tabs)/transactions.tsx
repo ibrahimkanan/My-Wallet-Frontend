@@ -24,9 +24,10 @@ import {
   BrandColors,
 } from '../../../constants/theme';
 import { Strings } from '../../../constants/strings';
-import { Button } from '../../../components/ui';
+import { Button, ErrorBanner } from '../../../components/ui';
 import { EmptyState } from '../../../components/home';
 import api from '../../../services/api';
+import { getErrorMessage } from '../../../utils/errors';
 import { Transaction, Wallet, Category } from '../../../types/models';
 import {
   GetTransactionsResponse,
@@ -72,6 +73,7 @@ export default function TransactionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Filters State
   const [filters, setFilters] = useState<FilterState>({
@@ -130,6 +132,7 @@ export default function TransactionsScreen() {
         if (offset === 0 && !isRefresh) {
           setLoading(true);
         }
+        setFetchError(null);
 
         const queryParts: string[] = [`limit=${PAGE_SIZE}`, `offset=${offset}`];
         if (filters.walletId) queryParts.push(`wallet_id=${filters.walletId}`);
@@ -152,6 +155,7 @@ export default function TransactionsScreen() {
         setHasMore(fetched.length >= PAGE_SIZE);
       } catch (err) {
         console.warn('[Transactions] Error fetching transactions:', err);
+        setFetchError(getErrorMessage(err, Strings.common.errorOccurred));
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -571,6 +575,14 @@ export default function TransactionsScreen() {
             {Strings.common.loading}
           </Text>
         </View>
+      ) : fetchError && transactions.length === 0 ? (
+        <EmptyState
+          icon="alert-circle-outline"
+          title={fetchError}
+          subtitle={Strings.common.networkError}
+          actionTitle={Strings.common.retry}
+          onAction={() => fetchTransactions(0)}
+        />
       ) : transactions.length === 0 ? (
         <EmptyState
           icon="receipt-outline"
@@ -606,6 +618,13 @@ export default function TransactionsScreen() {
           contentContainerStyle={styles.listContent}
           stickySectionHeadersEnabled={false}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            fetchError ? (
+              <View style={{ paddingHorizontal: Spacing.md, paddingBottom: Spacing.sm }}>
+                <ErrorBanner message={fetchError} onDismiss={() => setFetchError(null)} />
+              </View>
+            ) : null
+          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
